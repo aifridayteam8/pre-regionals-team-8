@@ -1,0 +1,11 @@
+timestamp,level,source,service,host,message,error_code
+2024-01-15 11:00:00,warning,api,gateway-service,lb-01,Response time exceeded threshold: 5000ms,RESPONSE_TIME_HIGH
+2024-01-15 11:00:05,warning,api,gateway-service,lb-01,Response time exceeded threshold: 5200ms,RESPONSE_TIME_HIGH
+2024-01-15 11:00:10,error,api,gateway-service,lb-01,Upstream timeout: backend-service-01,UPSTREAM_TIMEOUT
+2024-01-15 11:00:15,warning,api,gateway-service,lb-02,Response time exceeded threshold: 4800ms,RESPONSE_TIME_HIGH
+2024-01-15 11:00:20,error,api,gateway-service,lb-01,Connection refused: backend-service-02,CONN_REFUSED
+2024-01-15 11:00:25,critical,api,gateway-service,lb-01,All backend services unavailable,ALL_BACKENDS_DOWN
+2024-01-15 11:00:30,warning,api,gateway-service,lb-02,High latency detected: 3000ms,HIGH_LATENCY
+2024-01-15 11:00:35,error,api,gateway-service,lb-01,503 Service Unavailable returned to client,SERVICE_UNAVAILABLE
+2024-01-15 11:00:40,info,api,gateway-service,lb-01,Load balancer health check failed for backend-service-01,HEALTH_CHECK_FAILED
+2024-01-15 11:00:45,error,api,gateway-service,lb-02,Backend service returned 500 Internal Server Error,INTERNAL_ERROR
