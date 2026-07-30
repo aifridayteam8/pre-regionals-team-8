@@ -1,9 +1,19 @@
-import streamlit as st
+from flask import Flask
+from flask_cors import CORS
 
-st.set_page_config(page_title="IncidentIQ — New Incident", page_icon="🚨")
-st.title("IncidentIQ — New Incident")
+from api.routes import api
 
-uploaded_file = st.file_uploader("Upload an incident log", type=None)
 
-if uploaded_file is not None:
-    st.write(f"{uploaded_file.name} — {len(uploaded_file.getvalue())} bytes")
+def create_app() -> Flask:
+    app = Flask(__name__)
+    # Frontend is a separate app on a different origin — allow cross-origin calls.
+    CORS(app)
+    app.register_blueprint(api, url_prefix="/api")
+    return app
+
+
+app = create_app()
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)

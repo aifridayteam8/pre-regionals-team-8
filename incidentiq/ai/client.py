@@ -11,7 +11,10 @@ TIMEOUT_S = 120
 
 MODELS = {
     "rca": "azure_ai/genailab-maas-DeepSeek-R1",
-    "structured": "azure_ai/genailab-maas-Llama-3.3-70B-Instruct",
+    # azure_ai/genailab-maas-Llama-3.3-70B-Instruct is listed in /models but
+    # returns 404 DeploymentNotFound (Azure deployment not provisioned yet).
+    # Swap back once the gateway team fixes that.
+    "structured": "azure/genailab-maas-gpt-4.1-mini",
     "summary": "azure/genailab-maas-gpt-4o-mini",
 }
 
