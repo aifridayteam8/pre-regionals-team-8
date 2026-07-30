@@ -1,62 +1,88 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
-import Icon from "../common/Icon";
-
-const NAV_SECTIONS = [
-  {
-    title: "Operate",
-    items: [
-      { to: "/", label: "New Incident", icon: "upload" },
-      { to: "/history", label: "History", icon: "history" },
-    ],
-  },
-  {
-    title: "Analyze",
-    items: [
-      { to: "/dashboard", label: "Dashboard", icon: "dashboard" },
-      { to: "/about", label: "About", icon: "info" },
-    ],
-  },
-];
+import { useAuth } from "../context/AuthContext";
 
 export default function Sidebar() {
-  return (
-    <aside className="sidebar">
-      <div className="sidebar-brand">
-        <span className="sidebar-logo">
-          <Icon name="shield" size={18} />
-        </span>
 
-        <span>
-          <span className="sidebar-brand-name">IncidentIQ</span>
-          <span className="sidebar-brand-sub">AI Incident Reports</span>
-        </span>
-      </div>
+    const navigate = useNavigate();
 
-      {NAV_SECTIONS.map((section) => (
-        <nav key={section.title} className="sidebar-section">
-          <p className="sidebar-section-title">{section.title}</p>
+    const {
+        logout,
+        user
+    } = useAuth();
 
-          {section.items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              className={({ isActive }) =>
-                isActive ? "sidebar-link is-active" : "sidebar-link"
-              }
+    function handleLogout() {
+
+        logout();
+
+        navigate("/login");
+
+    }
+
+    return (
+
+        <aside className="sidebar">
+
+            <h2>IncidentIQ</h2>
+
+            <div
+                style={{
+                    marginBottom: "20px",
+                    fontSize: "14px"
+                }}
             >
-              <Icon name={item.icon} />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-      ))}
 
-      <div className="sidebar-footer">
-        <span>IncidentIQ v0.4.0</span>
-        <span>Environment: live (Flask API)</span>
-      </div>
-    </aside>
-  );
+                Welcome
+
+                <br />
+
+                <strong>
+
+                    {user?.username}
+
+                </strong>
+
+            </div>
+
+            <nav>
+
+                <NavLink to="/">
+                    New Incident
+                </NavLink>
+
+                <NavLink to="/history">
+                    History
+                </NavLink>
+
+                <NavLink to="/dashboard">
+                    Dashboard
+                </NavLink>
+
+                <NavLink to="/about">
+                    About
+                </NavLink>
+
+            </nav>
+
+            <button
+                onClick={handleLogout}
+                style={{
+                    marginTop: "auto",
+                    padding: "12px",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    background: "#dc2626",
+                    color: "#fff"
+                }}
+            >
+
+                Logout
+
+            </button>
+
+        </aside>
+
+    );
+
 }

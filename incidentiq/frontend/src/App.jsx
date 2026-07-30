@@ -1,53 +1,82 @@
-import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
-
 import Sidebar from "./components/layout/Sidebar";
-import Topbar from "./components/layout/Topbar";
+import HealthDot from "./components/layout/HealthDot";
+import ProtectedRoute from "./components/layout/ProtectedRoute";
 
+import Login from "./pages/Login";
 import NewIncident from "./pages/NewIncident";
-import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
+import History from "./pages/History";
 import About from "./pages/About";
 
-import { getHealth } from "./api/client";
+function ProtectedLayout() {
+
+    return (
+
+        <div className="app-layout">
+
+            <Sidebar />
+
+            <main className="page-container">
+
+                <HealthDot />
+
+                <Routes>
+
+                    <Route
+                        path="/"
+                        element={<NewIncident />}
+                    />
+
+                    <Route
+                        path="/dashboard"
+                        element={<Dashboard />}
+                    />
+
+                    <Route
+                        path="/history"
+                        element={<History />}
+                    />
+
+                    <Route
+                        path="/about"
+                        element={<About />}
+                    />
+
+                </Routes>
+
+            </main>
+
+        </div>
+
+    );
+
+}
 
 export default function App() {
-  const [health, setHealth] = useState("checking");
 
-  useEffect(() => {
-    let cancelled = false;
+    return (
 
-    function check() {
-      getHealth()
-        .then(() => !cancelled && setHealth("healthy"))
-        .catch(() => !cancelled && setHealth("down"));
-    }
+        <Routes>
 
-    check();
-    const timer = setInterval(check, 30_000);
+            <Route
+                path="/login"
+                element={<Login />}
+            />
 
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, []);
+            <Route
+                path="/*"
+                element={
+                    <ProtectedRoute>
 
-  return (
-    <div className="app-layout">
-      <Sidebar />
+                        <ProtectedLayout />
 
-      <div className="app-main">
-        <Topbar health={health} />
+                    </ProtectedRoute>
+                }
+            />
 
-        <main className="page-container">
-          <Routes>
-            <Route path="/" element={<NewIncident />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/about" element={<About />} />
-          </Routes>
-        </main>
-      </div>
-    </div>
-  );
+        </Routes>
+
+    );
+
 }
