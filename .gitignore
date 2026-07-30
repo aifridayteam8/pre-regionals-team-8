@@ -1,0 +1,5 @@
+incidentiq/data/
+incidentiq/.cache/
+__pycache__/
+*.pyc
+.venv/
