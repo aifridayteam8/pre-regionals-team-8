@@ -1,5 +1,8 @@
+// The Flask API is mounted under /api (see backend/app.py), so every path
+// here must include that prefix — hitting /auth/login returns a 404 whose
+// response carries no CORS headers, which the browser reports as a CORS error.
 const API_BASE =
-    import.meta.env.VITE_API_BASE || "http://localhost:5000";
+    (import.meta.env.VITE_API_BASE || "http://localhost:5000") + "/api";
 
 const ACCESS_TOKEN_KEY = "incidentiq_access_token";
 const REFRESH_TOKEN_KEY = "incidentiq_refresh_token";
@@ -20,7 +23,7 @@ export async function login(username, password) {
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.detail || "Login failed");
+        throw new Error(data.message || "Login failed");
     }
 
     localStorage.setItem(
@@ -70,16 +73,16 @@ export async function refreshAccessToken() {
     if (!refresh_token)
         throw new Error("Refresh token missing");
 
+    // /api/auth/refresh uses @jwt_required(refresh=True): the refresh token
+    // goes in the Authorization header, not the request body.
     const response = await fetch(
         `${API_BASE}/auth/refresh`,
         {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                refresh_token
-            })
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${refresh_token}`
+            }
         }
     );
 

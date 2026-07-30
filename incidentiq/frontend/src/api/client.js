@@ -88,7 +88,9 @@ function toTimelineEvent(ev, index) {
     id: ev.db_id ?? index,
     timestamp: ev.ts ? ev.ts.slice(0, 19).replace("T", " ") : "-",
     severity: ev.severity ?? "INFO",
-    host: ev.section ?? null, // cloud logs have no host; show log section instead
+    // syslog/json/csv logs carry a real host; Azure cloud logs don't, so fall
+    // back to the log section for those.
+    host: ev.host ?? ev.section ?? null,
     service: ev.service || "-",
     message: ev.message,
     line: ev.line_no,
