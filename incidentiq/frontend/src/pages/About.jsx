@@ -14,8 +14,8 @@ const STACK = [
   "Vite",
   "React Router",
   "Recharts",
-  "Express mock server",
-  "Server-Sent Events",
+  "Flask REST API",
+  "SQLite incident store",
 ];
 
 function ArchitectureDiagram() {

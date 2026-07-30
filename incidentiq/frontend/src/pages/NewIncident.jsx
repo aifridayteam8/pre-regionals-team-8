@@ -1,50 +1,57 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import Header from "../components/layout/Header";
 import UploadDropzone from "../components/upload/UploadDropzone";
-import SampleFiles from "../components/upload/SampleFiles";
 import UploadProgress from "../components/upload/UploadProgress";
 import ReportView from "../components/report/ReportView";
 import Button from "../components/common/Button";
 
-import { GENERATION_STAGES, mockReport } from "../mock/mockData";
+import { uploadIncident, fetchFullReport } from "../api/client";
+
+const STAGES = ["Uploading", "Parsing & storing", "Building report"];
 
 export default function NewIncident() {
   const [file, setFile] = useState(null);
   const [stageIndex, setStageIndex] = useState(null);
   const [report, setReport] = useState(null);
-  const timers = useRef([]);
-
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const [error, setError] = useState(null);
 
   const isGenerating = stageIndex !== null;
 
   function reset(selected = null) {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
     setFile(selected);
     setStageIndex(null);
     setReport(null);
+    setError(null);
   }
 
-  function handleGenerate() {
+  async function handleGenerate() {
     if (!file) return;
 
     setReport(null);
-    setStageIndex(0);
+    setError(null);
+    const startedAt = performance.now();
 
-    timers.current = GENERATION_STAGES.map((_, index) =>
-      setTimeout(() => {
-        const next = index + 1;
+    try {
+      setStageIndex(0);
+      const uploaded = await uploadIncident(file);
 
-        if (next === GENERATION_STAGES.length) {
-          setStageIndex(null);
-          setReport(mockReport);
-        } else {
-          setStageIndex(next);
-        }
-      }, 700 * (index + 1))
-    );
+      setStageIndex(1);
+      // Parsing/storing happen server-side inside the upload call; give the
+      // stage list a beat so the progression is visible.
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      setStageIndex(2);
+      const fullReport = await fetchFullReport(uploaded.parent_id, {
+        latencyMs: Math.round(performance.now() - startedAt),
+      });
+
+      setReport(fullReport);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setStageIndex(null);
+    }
   }
 
   return (
@@ -67,22 +74,15 @@ export default function NewIncident() {
           onFileSelected={(selected) => reset(selected)}
           onClear={() => reset(null)}
         />
-
-        <SampleFiles
-          disabled={isGenerating}
-          onSelect={(sample) => reset({ name: sample.fileName })}
-        />
       </div>
 
       {isGenerating && (
-        <UploadProgress
-          fileName={file?.name}
-          stages={GENERATION_STAGES}
-          activeIndex={stageIndex}
-        />
+        <UploadProgress fileName={file?.name} stages={STAGES} activeIndex={stageIndex} />
       )}
 
-      {!isGenerating && <ReportView report={report} />}
+      {!isGenerating && (
+        <ReportView report={report} error={error} onRetry={handleGenerate} />
+      )}
     </>
   );
 }

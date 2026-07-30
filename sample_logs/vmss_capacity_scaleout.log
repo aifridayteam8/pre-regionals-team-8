@@ -1,0 +1,125 @@
+=================================================================================
+AZURE INFRASTRUCTURE INCIDENT LOG
+Environment : Production
+Region      : Central India
+Correlation ID : b19f7c44-3da2-4e0b-8f61-90cc47ae5512
+=================================================================================
+
+2026-07-29T11:40:05.114Z INFO Autoscale Engine
+
+Rule Triggered:
+CPU > 75% for 10 minutes
+
+Scale Set:
+vmss-orders-prod
+
+Action:
+Scale out from 8 to 12 instances
+
+------------------------------------------------------------
+
+2026-07-29T11:40:19.887Z INFO Compute Resource Provider
+
+PUT https://management.azure.com/subscriptions/xxxxxxxx/resourceGroups/rg-orders-prod/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-orders-prod?api-version=2024-03-01
+
+HTTP Status:
+202 Accepted
+
+------------------------------------------------------------
+
+2026-07-29T11:42:03.542Z WARN Compute Resource Provider
+
+Message:
+Instance provisioning slower than expected.
+
+Instances Ready:
+9 of 12
+
+------------------------------------------------------------
+
+2026-07-29T11:44:52.096Z ERROR Compute Resource Provider
+
+HTTP Status:
+409 Conflict
+
+Error Code:
+AllocationFailed
+
+Response:
+{
+   "error":{
+      "code":"AllocationFailed",
+      "message":"Allocation failed. The requested VM size Standard_D8s_v5 is temporarily unavailable in the selected zone."
+   }
+}
+
+------------------------------------------------------------
+
+2026-07-29T11:45:30.671Z WARN Autoscale Engine
+
+Message:
+Scale-out partially completed.
+
+Instances Ready:
+10 of 12
+
+Queue Depth:
+6412
+
+------------------------------------------------------------
+
+2026-07-29T11:47:12.220Z INFO Autoscale Engine
+
+Action:
+Retry with zone balancing relaxed and size fallback Standard_D4s_v5
+
+------------------------------------------------------------
+
+2026-07-29T11:51:26.489Z INFO Compute Resource Provider
+
+Message:
+2 fallback instances provisioned successfully.
+
+Instances Ready:
+12 of 12
+
+------------------------------------------------------------
+
+2026-07-29T11:55:41.902Z INFO Azure Monitor
+
+Alert Cleared:
+Orders API latency back under 300 ms p95
+
+------------------------------------------------------------
+
+2026-07-29T11:58:09.343Z INFO Incident Recorder
+
+Incident ID:
+INC-20260729-100112
+
+Severity:
+SEV-3
+
+Category:
+Compute Capacity
+
+Affected Service:
+Orders Platform
+
+Impact:
+Elevated checkout latency for 15 minutes during peak traffic; no failed orders.
+
+Root Cause (System Generated):
+Regional capacity shortage for Standard_D8s_v5 caused AllocationFailed during autoscale; fallback SKU restored full capacity.
+
+Recommendation:
+- Configure multiple allowed VM sizes in the scale set profile.
+- Spread the scale set across all three availability zones.
+- Pre-scale ahead of known daily peak at 11:30 local time.
+
+Incident Status:
+Resolved
+
+=================================================================================
+END OF LOG
+=================================================================================

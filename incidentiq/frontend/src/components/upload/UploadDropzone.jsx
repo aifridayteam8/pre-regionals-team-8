@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import Button from "../common/Button";
 import Icon from "../common/Icon";
 
-const ACCEPTED = ".log,.txt,.json";
+const ACCEPTED_HINT = ".log, .txt, .json or plain text";
 
 function formatSize(bytes) {
   if (bytes == null) return null;
@@ -48,7 +48,7 @@ export default function UploadDropzone({ file, onFileSelected, onClear, disabled
 
         <p className="dropzone-title">Drag &amp; drop your incident log</p>
         <p className="dropzone-hint">
-          Accepted formats: {ACCEPTED} &middot; up to 25 MB &middot; secrets are masked before analysis
+          Accepted formats: {ACCEPTED_HINT} &middot; up to 5 MB
         </p>
 
         <Button variant="primary" disabled={disabled} onClick={() => inputRef.current?.click()}>
@@ -60,7 +60,6 @@ export default function UploadDropzone({ file, onFileSelected, onClear, disabled
           ref={inputRef}
           className="dropzone-input"
           type="file"
-          accept={ACCEPTED}
           disabled={disabled}
           onChange={(event) => selectFile(event.target.files?.[0])}
         />

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -29,14 +30,32 @@ _SEVERITY_RANK = {
 
 def _connect() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
+@contextmanager
+def _db():
+    """Connection context that commits on success and always CLOSES.
+
+    sqlite3's own `with conn:` commits but leaves the connection open; this
+    wrapper closes it so we don't leak connections / hold locks.
+    """
+    conn = _connect()
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def init_db() -> None:
-    with _connect() as conn:
+    with _db() as conn:
         conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS incidents (
@@ -144,6 +163,17 @@ def _derive_parent_status(parsed: IncidentFile) -> str:
     return _normalize_status(raw)
 
 
+def _derive_category(parsed: IncidentFile) -> str:
+    """Category from banner metadata, else the Incident Recorder event details."""
+    if parsed.metadata.get("Category"):
+        return parsed.metadata["Category"]
+    all_details = list(parsed.parent_details) + [d for c in parsed.children for d in c.details]
+    for det in all_details:
+        if det.get("Category"):
+            return det["Category"]
+    return "Unknown"
+
+
 def _insert_incident(conn, **cols) -> None:
     keys = list(cols)
     conn.execute(
@@ -189,7 +219,7 @@ def save_file(parsed: IncidentFile, filename: str) -> dict:
     # parent's status — an open parent means its children are open too.
     parent_status = _derive_parent_status(parsed)
 
-    with _connect() as conn:
+    with _db() as conn:
         parent_id = _next_incident_id(conn)
         _insert_incident(
             conn,
@@ -206,7 +236,7 @@ def save_file(parsed: IncidentFile, filename: str) -> dict:
             correlation_id=meta.get("Correlation ID"),
             log_incident_id=meta.get("Incident ID"),
             severity=parsed.parent_severity or agg["severity"],
-            category=meta.get("Category") or "Unknown",
+            category=_derive_category(parsed),
             status=parent_status,
             event_count=len(all_events),
             error_count=agg["error_count"],
@@ -241,7 +271,7 @@ def save_file(parsed: IncidentFile, filename: str) -> dict:
                 correlation_id=meta.get("Correlation ID"),
                 log_incident_id=meta.get("Incident ID"),
                 severity=csum["severity"],
-                category="Unknown",
+                category=_derive_category(parsed),  # child inherits parent category
                 status=parent_status,  # child inherits parent status
                 event_count=len(child.events),
                 error_count=csum["error_count"],
@@ -264,7 +294,7 @@ def save_file(parsed: IncidentFile, filename: str) -> dict:
 
 def list_parents() -> list[dict]:
     """Top-level incidents, each with a nested list of child summaries."""
-    with _connect() as conn:
+    with _db() as conn:
         parents = conn.execute(
             "SELECT * FROM incidents WHERE kind = 'parent' ORDER BY created_at DESC, incident_id DESC"
         ).fetchall()
@@ -281,7 +311,7 @@ def list_parents() -> list[dict]:
 
 
 def get_incident(incident_id: str) -> dict | None:
-    with _connect() as conn:
+    with _db() as conn:
         row = conn.execute(
             "SELECT * FROM incidents WHERE incident_id = ?", (incident_id,)
         ).fetchone()
@@ -289,7 +319,7 @@ def get_incident(incident_id: str) -> dict | None:
 
 
 def get_children(parent_id: str) -> list[dict]:
-    with _connect() as conn:
+    with _db() as conn:
         rows = conn.execute(
             "SELECT * FROM incidents WHERE parent_id = ? ORDER BY child_index", (parent_id,)
         ).fetchall()
@@ -297,7 +327,7 @@ def get_children(parent_id: str) -> list[dict]:
 
 
 def get_events(incident_id: str) -> list[dict]:
-    with _connect() as conn:
+    with _db() as conn:
         rows = conn.execute(
             "SELECT * FROM events WHERE incident_id = ? ORDER BY db_id", (incident_id,)
         ).fetchall()

@@ -55,7 +55,7 @@ export default function Sidebar() {
 
       <div className="sidebar-footer">
         <span>IncidentIQ v0.4.0</span>
-        <span>Environment: demo (mock data)</span>
+        <span>Environment: live (Flask API)</span>
       </div>
     </aside>
   );

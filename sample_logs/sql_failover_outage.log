@@ -1,0 +1,136 @@
+=================================================================================
+AZURE INFRASTRUCTURE INCIDENT LOG
+Environment : Production
+Region      : East US 2
+Correlation ID : e83d0f19-6a7b-42c8-b1e4-55d2c9f80a26
+=================================================================================
+
+2026-07-30T02:03:17.664Z INFO SQL Health Monitor
+
+Database:
+sqldb-billing-prod
+
+Status:
+Healthy
+
+DTU Utilization:
+41%
+
+------------------------------------------------------------
+
+2026-07-30T02:11:48.302Z WARN SQL Health Monitor
+
+Message:
+Login failures rising on primary replica.
+
+Failed Logins (5 min):
+262
+
+------------------------------------------------------------
+
+2026-07-30T02:12:29.117Z ERROR Billing API
+
+Operation:
+Create Invoice
+
+HTTP Status:
+500 Internal Server Error
+
+Response:
+{
+   "error":{
+      "code":"DatabaseUnavailable",
+      "message":"A transport-level error has occurred when receiving results from the server."
+   }
+}
+
+------------------------------------------------------------
+
+2026-07-30T02:13:05.771Z CRITICAL Azure SQL Service
+
+Event:
+Primary replica unresponsive
+
+Database:
+sqldb-billing-prod
+
+Node:
+cr4.eastus2-a.control.database.windows.net
+
+------------------------------------------------------------
+
+2026-07-30T02:13:41.008Z INFO Azure SQL Service
+
+Action:
+Automatic failover initiated to secondary replica
+
+Target Node:
+cr4.eastus2-c.control.database.windows.net
+
+------------------------------------------------------------
+
+2026-07-30T02:16:12.489Z WARN Billing API
+
+Message:
+Connection retries in progress during failover window.
+
+Retry Count:
+4
+
+------------------------------------------------------------
+
+2026-07-30T02:17:55.930Z INFO Azure SQL Service
+
+Event:
+Failover completed
+
+New Primary:
+cr4.eastus2-c.control.database.windows.net
+
+Data Loss:
+None
+
+------------------------------------------------------------
+
+2026-07-30T02:19:23.556Z INFO Billing API
+
+Message:
+Connection pool re-established, invoice processing resumed.
+
+HTTP Status:
+200 OK
+
+------------------------------------------------------------
+
+2026-07-30T02:24:40.812Z INFO Incident Recorder
+
+Incident ID:
+INC-20260730-100199
+
+Severity:
+SEV-1
+
+Category:
+Database
+
+Affected Service:
+Billing Platform
+
+Impact:
+Invoice creation failed for 7 minutes during unplanned SQL failover; 312 requests returned HTTP 500 and were retried by clients.
+
+Root Cause (System Generated):
+Hardware fault on the primary SQL replica node triggered automatic failover; connections erred until the secondary was promoted.
+
+Recommendation:
+- Enable retry-with-backoff on all Billing API database calls.
+- Shorten connection timeout to fail fast during failover windows.
+- Subscribe to Azure Resource Health alerts for sqldb-billing-prod.
+- Review zone-redundant configuration for the billing database tier.
+
+Incident Status:
+Mitigated
+
+=================================================================================
+END OF LOG
+=================================================================================

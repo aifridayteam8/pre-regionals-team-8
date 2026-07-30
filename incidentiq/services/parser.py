@@ -269,7 +269,10 @@ def _split_sections(lines: list[str]) -> list[_RawSection]:
             title_parts: list[str] = []
             while j < n:
                 s = lines[j].strip()
-                if not s or _FENCE_RE.match(s) or _HEADER_RE.match(lines[j]):
+                # Stop the title at a blank, a fence, an event header, or the
+                # first "Key: value" metadata line — single-incident banners put
+                # metadata between the title and the closing fence.
+                if not s or _FENCE_RE.match(s) or _HEADER_RE.match(lines[j]) or _KV_RE.match(s):
                     break
                 title_parts.append(s)
                 j += 1
