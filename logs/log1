@@ -1,0 +1,297 @@
+=================================================================================
+AZURE INFRASTRUCTURE INCIDENT LOG
+Environment : Production
+Region      : East US
+Correlation ID : c6b72d2d-45d1-4b8f-a76f-9b4e33d74f0d
+=================================================================================
+
+2026-07-30T09:18:42.174Z INFO UserRequestService
+User: john.doe@contoso.com
+Employee ID: EMP10294
+Request ID: REQ-948572
+Action: Create Azure Subscription
+Subscription Name: Finance-Production-01
+Department: Finance
+Business Unit: Global Finance
+Requested Region: East US
+Management Group: Corp-Production
+Billing Account: BA-459883
+Enrollment Account: EA-FIN-1002
+Status: Request Accepted
+
+------------------------------------------------------------
+
+2026-07-30T09:18:43.892Z INFO ProvisioningEngine
+Workflow Started
+Workflow ID: WF-20260730-948572
+CorrelationId: c6b72d2d-45d1-4b8f-a76f-9b4e33d74f0d
+Current Stage: Subscription Provisioning
+Triggered By: Azure Portal
+
+------------------------------------------------------------
+
+2026-07-30T09:18:45.221Z INFO Azure Subscription API
+
+POST https://management.azure.com/providers/Microsoft.Subscription/createSubscription?api-version=2023-01-01
+
+Headers:
+Authorization: Bearer **************
+Content-Type: application/json
+
+Payload:
+{
+   "subscriptionName":"Finance-Production-01",
+   "billingScope":"/billingAccounts/BA-459883/enrollmentAccounts/EA-FIN-1002",
+   "managementGroup":"Corp-Production"
+}
+
+HTTP Status: 202 Accepted
+
+Provisioning Job ID:
+SUBJOB-8739458
+
+------------------------------------------------------------
+
+2026-07-30T09:18:48.909Z INFO Polling Subscription Status
+
+GET https://management.azure.com/providers/Microsoft.Subscription/operationResults/SUBJOB-8739458?api-version=2023-01-01
+
+Response:
+{
+   "status":"Running"
+}
+
+------------------------------------------------------------
+
+2026-07-30T09:19:06.874Z INFO Azure AD Integration
+
+Creating Azure AD subscription association...
+
+Tenant:
+contoso.onmicrosoft.com
+
+Tenant ID:
+4fd12ba7-ae93-4af5-a49b-c78d24b24551
+
+Owner:
+john.doe@contoso.com
+
+------------------------------------------------------------
+
+2026-07-30T09:19:12.108Z WARN Azure AD Graph API
+
+POST https://graph.microsoft.com/v1.0/groups
+
+Response Time:
+28.7 sec
+
+HTTP Status:
+504 Gateway Timeout
+
+Response Body:
+{
+   "error":{
+      "code":"GatewayTimeout",
+      "message":"Upstream service did not respond within timeout."
+   }
+}
+
+Retry Count:
+1
+
+------------------------------------------------------------
+
+2026-07-30T09:19:28.992Z INFO RetryPolicy
+
+Retry Attempt: 2
+
+Calling Azure AD Group API...
+
+------------------------------------------------------------
+
+2026-07-30T09:19:54.173Z ERROR Azure AD Graph API
+
+HTTP Status:
+504 Gateway Timeout
+
+API:
+https://graph.microsoft.com/v1.0/groups
+
+Response:
+{
+   "error":{
+      "code":"GatewayTimeout",
+      "message":"Directory service unavailable."
+   }
+}
+
+------------------------------------------------------------
+
+2026-07-30T09:20:02.654Z WARN Subscription Provisioning Engine
+
+Unable to create default security group.
+
+Group Name:
+Finance-Production-01-Admins
+
+Stage:
+AAD Group Provisioning
+
+Result:
+FAILED
+
+------------------------------------------------------------
+
+2026-07-30T09:20:09.084Z INFO ARM Deployment
+
+Deployment Name:
+Finance-Production-01-bootstrap
+
+Deployment Started...
+
+------------------------------------------------------------
+
+2026-07-30T09:20:13.011Z ERROR ARM Deployment
+
+Resource Group:
+rg-finance-prod-bootstrap
+
+Deployment Status:
+Failed
+
+Error:
+SubscriptionNotFound
+
+Message:
+The subscription is not in an active provisioning state.
+
+Tracking ID:
+ARM-DEP-229814
+
+------------------------------------------------------------
+
+2026-07-30T09:20:18.771Z INFO Management Group Service
+
+Attempting association with Management Group
+
+Management Group:
+Corp-Production
+
+------------------------------------------------------------
+
+2026-07-30T09:20:20.105Z ERROR Management Group API
+
+PUT https://management.azure.com/providers/Microsoft.Management/managementGroups/Corp-Production/subscriptions/xxxxxxxx
+
+HTTP Status:
+404 Not Found
+
+Response:
+{
+   "error":{
+      "code":"SubscriptionNotFound",
+      "message":"Subscription does not exist."
+   }
+}
+
+------------------------------------------------------------
+
+2026-07-30T09:20:25.914Z ERROR Subscription Provisioning API
+
+Operation:
+Create Subscription
+
+Status:
+FAILED
+
+Failure Code:
+SUBSCRIPTION_PROVISIONING_FAILED
+
+Root Error:
+Azure AD group provisioning timeout caused workflow termination.
+
+API Response:
+
+{
+   "status":"Failed",
+   "errorCode":"ProvisioningFailed",
+   "errorMessage":"Subscription provisioning failed due to dependent service timeout."
+}
+
+------------------------------------------------------------
+
+2026-07-30T09:20:27.412Z INFO Notification Service
+
+Sending email to:
+john.doe@contoso.com
+
+Subject:
+Azure Subscription Provisioning Failed
+
+Delivery Status:
+Success
+
+------------------------------------------------------------
+
+2026-07-30T09:20:30.904Z ERROR Workflow Engine
+
+Workflow:
+WF-20260730-948572
+
+Final State:
+FAILED
+
+Execution Time:
+107 seconds
+
+Failure Stage:
+Subscription Provisioning
+
+Rollback:
+Initiated
+
+------------------------------------------------------------
+
+2026-07-30T09:20:35.982Z INFO Rollback Service
+
+Deleting partially created resources...
+
+No active subscription found.
+
+Rollback Complete.
+
+------------------------------------------------------------
+
+2026-07-30T09:20:38.114Z INFO Incident Recorder
+
+Incident ID:
+INC-20260730-100184
+
+Severity:
+SEV-2
+
+Category:
+Azure Subscription Provisioning
+
+Affected Service:
+Azure Subscription Management
+
+Impact:
+User unable to provision new subscription.
+
+Root Cause (System Generated):
+Azure AD Graph API experienced repeated Gateway Timeout (HTTP 504), preventing security group creation required for subscription activation.
+
+Recommendation:
+- Retry provisioning after Azure AD service recovery.
+- Investigate Azure AD Graph API latency.
+- Configure exponential backoff with 5 retry attempts.
+- Add health checks before provisioning workflow.
+- Alert platform engineering if Azure AD API latency exceeds 15 seconds.
+
+Incident Status:
+Open
+
+=================================================================================
+END OF LOG
+=================================================================================
