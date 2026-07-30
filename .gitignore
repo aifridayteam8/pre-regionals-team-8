@@ -3,4 +3,3 @@ incidentiq/.cache/
 __pycache__/
 *.pyc
 .venv/
-.env
