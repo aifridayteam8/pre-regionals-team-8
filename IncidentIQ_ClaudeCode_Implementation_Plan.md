@@ -222,6 +222,29 @@ Supersedes all local-Ollama references in Phase 0 and Phase 4 above. Decided 202
 
 **Shared folder rules** (from the same event doc, for reference — not code): a shared file share exists at `genailab-maas-hackathon/Hackathon`, region-specific subfolders for source code. Don't treat it as a working drive (work stays on local disk); only the team's AI SPOC copies files up; don't touch the root folder; only top-performing teams get archived. Not automated by this project — noted here so it isn't lost.
 
+## ADDENDUM 2 — UI switched from Streamlit to a Flask JSON backend
+
+Decided 2026-07-30. The frontend will be built separately by another developer; this repo is now a **Flask REST API backend only** — no Streamlit. All `st.*` rendering described in Phases 1, 5, 6, 7, 8 is replaced by JSON endpoints; the separate frontend consumes them.
+
+**What stays unchanged:** everything framework-agnostic — `services/*` (parser, masker, correlator, timeline, store, embeddings, similar, analytics), `ai/*` (client, prompts, pipeline, validator), and `services/models.py`. These have no UI coupling.
+
+**What changes:**
+- `app.py` → Flask app factory (`create_app()`), CORS enabled (frontend is a separate origin).
+- `pages/` (Streamlit multipage convention) removed — those screens become API routes.
+- New `api/routes.py` blueprint, mounted at `/api`, grows one endpoint group per phase.
+- `requirements.txt`: drop `streamlit`, add `flask`, `flask-cors`.
+
+**Endpoint map (built incrementally, matches the phase plan):**
+- `GET  /api/health` — liveness.
+- `POST /api/incidents` — upload a log; runs ingest→parse→mask→correlate→timeline→pipeline→validator→store; returns the Report as JSON. (Phase 5.) *Currently: echoes filename + size only — Phase 1 equivalent.*
+- `GET  /api/incidents` — list all (History). (Phase 6.)
+- `GET  /api/incidents/<id>` — one full report. (Phase 6.)
+- `GET  /api/incidents/<id>/similar` — top-k similar. (Phase 7.)
+- `GET  /api/dashboard` — analytics KPIs + chart data. (Phase 7.)
+- Streaming generation (Phase 5's `st.write_stream`) becomes Server-Sent Events on the incident-create path, or a follow-up decision with the frontend dev.
+
+**Revised Phase 1 check:** `GET /api/health` returns 200 `{"status":"ok"}`, and `POST /api/incidents` with a file returns its filename + byte size.
+
 ## Cut order if behind schedule
 
 1. Recurring-cause clustering (keep the other 3 charts)
