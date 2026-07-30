@@ -1,0 +1,446 @@
+===========================================================================================
+AZURE INFRASTRUCTURE INCIDENT LOG
+===========================================================================================
+
+Environment          : Production
+Cloud                : Microsoft Azure
+Region               : East US
+Tenant               : contoso.onmicrosoft.com
+Tenant ID            : 94d74fb1-2ab4-46bd-a38f-991d451ef4bc
+
+Incident ID          : INC-20260730-400192
+Severity             : SEV-1
+Correlation ID       : dbe29174-9fd7-47cb-a843-8ab26fd81145
+Workflow ID          : WF-INFRA-20260730-400192
+Request ID           : REQ-INFRA-887621
+
+User                 : david.anderson@contoso.com
+Employee ID          : EMP10981
+Department           : Infrastructure Engineering
+
+Subscription Name    : Enterprise-Production
+Resource Group       : rg-enterprise-prod
+Storage Account      : stenterpriseprod001
+Management Group     : Corp-Production
+
+===========================================================================================
+WORKFLOW STARTED
+===========================================================================================
+
+2026-07-30T14:18:11.203Z INFO Request Service
+
+User submitted infrastructure provisioning request.
+
+Requested Resources
+
+- Azure Subscription
+- Resource Group
+- Storage Account
+- Virtual Network
+- Key Vault
+
+Status : Accepted
+
+===========================================================================================
+INCIDENT 1
+AZURE SUBSCRIPTION PROVISIONING FAILED
+===========================================================================================
+
+2026-07-30T14:18:14.402Z INFO Subscription Provisioning Engine
+
+Creating Azure Subscription
+
+Workflow Stage
+
+Subscription Provisioning
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:18:15.881Z INFO Azure REST API
+
+POST
+
+https://management.azure.com/providers/Microsoft.Subscription/createSubscription?api-version=2023-01-01
+
+HTTP Status
+
+202 Accepted
+
+Provisioning Job
+
+SUB-882173
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:18:28.416Z INFO Subscription Status Polling
+
+Current Status
+
+Running
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:18:51.124Z WARN Azure Subscription Service
+
+Provisioning taking longer than expected.
+
+Response Time
+
+31 seconds
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:19:14.281Z ERROR Azure Subscription API
+
+HTTP Status
+
+504 Gateway Timeout
+
+Response
+
+{
+   "error":{
+      "code":"GatewayTimeout",
+      "message":"Subscription provisioning service unavailable."
+   }
+}
+
+Retry Count
+
+1
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:19:42.118Z ERROR Subscription Provisioning Engine
+
+Provisioning Failed
+
+Failure Code
+
+SUBSCRIPTION_PROVISIONING_TIMEOUT
+
+Result
+
+Subscription was never activated.
+
+===========================================================================================
+INCIDENT 2
+RESOURCE GROUP CREATION FAILED
+===========================================================================================
+
+2026-07-30T14:19:45.613Z INFO ARM Deployment Engine
+
+Starting ARM deployment.
+
+Deployment Name
+
+Enterprise-Infrastructure
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:19:48.091Z INFO Azure Resource Manager
+
+PUT
+
+https://management.azure.com/subscriptions/xxxxxxxx/resourcegroups/rg-enterprise-prod?api-version=2022-09-01
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:19:52.617Z ERROR ARM Validation
+
+HTTP Status
+
+400 Bad Request
+
+Error
+
+InvalidTemplate
+
+Message
+
+Deployment validation failed because the subscription is not in an Active state.
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:19:56.118Z WARN ARM Retry Engine
+
+Retry Attempt
+
+1
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:20:11.731Z ERROR ARM Deployment
+
+Deployment State
+
+Failed
+
+Tracking ID
+
+ARM-DEP-551902
+
+Reason
+
+SubscriptionNotFound
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:20:16.014Z INFO Azure Activity Log
+
+Operation
+
+Microsoft.Resources/resourceGroups/write
+
+Status
+
+Failed
+
+===========================================================================================
+INCIDENT 3
+STORAGE ACCOUNT CREATION FAILED
+===========================================================================================
+
+2026-07-30T14:20:20.118Z INFO Storage Provisioning Engine
+
+Attempting Storage Account creation.
+
+Storage Account
+
+stenterpriseprod001
+
+SKU
+
+Standard_LRS
+
+Region
+
+East US
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:20:22.711Z INFO Azure Storage API
+
+PUT
+
+https://management.azure.com/subscriptions/xxxxxxxx/resourceGroups/rg-enterprise-prod/providers/Microsoft.Storage/storageAccounts/stenterpriseprod001?api-version=2023-01-01
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:20:28.908Z ERROR Azure Storage Resource Provider
+
+HTTP Status
+
+409 Conflict
+
+Error Code
+
+RegionCapacityUnavailable
+
+Response
+
+{
+   "error":{
+      "code":"RegionCapacityUnavailable",
+      "message":"The selected Azure region currently has insufficient capacity for Storage Account provisioning."
+   }
+}
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:20:34.228Z WARN Azure Monitor
+
+Alert
+
+Storage Capacity Warning
+
+Severity
+
+Critical
+
+Affected Region
+
+East US
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:20:48.813Z INFO Retry Engine
+
+Retry Attempt
+
+1
+
+Changing Region
+
+East US 2
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:21:02.187Z ERROR Azure Storage API
+
+HTTP Status
+
+404 Not Found
+
+Message
+
+Resource Group rg-enterprise-prod not found.
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:21:10.114Z ERROR Storage Provisioning Engine
+
+Storage provisioning aborted.
+
+Reason
+
+Parent Resource Group does not exist.
+
+===========================================================================================
+AZURE MONITOR ALERTS
+===========================================================================================
+
+2026-07-30T14:21:18.291Z ALERT
+
+Subscription Provisioning Failure
+
+Severity
+
+Critical
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:21:20.941Z ALERT
+
+ARM Deployment Validation Failed
+
+Severity
+
+High
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:21:22.712Z ALERT
+
+Storage Capacity Exhaustion
+
+Severity
+
+Critical
+
+===========================================================================================
+ROLLBACK
+===========================================================================================
+
+2026-07-30T14:21:30.112Z INFO Rollback Engine
+
+Rollback initiated.
+
+-------------------------------------------------------------------------------------------
+
+Deleting temporary deployment artifacts...
+
+Removing deployment locks...
+
+Cleaning ARM deployment cache...
+
+Removing pending provisioning jobs...
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T14:21:46.871Z INFO Rollback Completed
+
+Status
+
+Success
+
+===========================================================================================
+FINAL INCIDENT SUMMARY
+===========================================================================================
+
+Incident ID
+
+INC-20260730-400192
+
+Severity
+
+SEV-1
+
+Affected User
+
+david.anderson@contoso.com
+
+Subscription
+
+Enterprise-Production
+
+Resource Group
+
+rg-enterprise-prod
+
+Storage Account
+
+stenterpriseprod001
+
+Execution Time
+
+215 Seconds
+
+===========================================================================================
+ROOT CAUSE ANALYSIS
+===========================================================================================
+
+Primary Incident
+
+Azure Subscription API experienced repeated Gateway Timeout (HTTP 504), preventing subscription activation.
+
+Secondary Incident
+
+ARM deployment validation failed because the subscription never entered an Active state.
+
+Tertiary Incident
+
+Storage Account provisioning failed due to regional capacity exhaustion (HTTP 409 RegionCapacityUnavailable). Retry in East US 2 also failed because the Resource Group was never successfully created.
+
+===========================================================================================
+BUSINESS IMPACT
+===========================================================================================
+
+• Subscription provisioning failed.
+
+• Resource Group was never created.
+
+• Storage Account deployment aborted.
+
+• Infrastructure deployment pipeline stopped.
+
+• Application onboarding delayed.
+
+===========================================================================================
+RECOMMENDATIONS
+===========================================================================================
+
+• Implement exponential retry for Azure Subscription API.
+
+• Validate subscription state before ARM deployment.
+
+• Perform ARM template validation prior to execution.
+
+• Enable Azure Service Health checks before provisioning.
+
+• Configure automatic region failover for Storage Accounts.
+
+• Retry deployment only after subscription activation succeeds.
+
+• Add dependency validation between provisioning stages.
+
+===========================================================================================
+INCIDENT STATUS
+
+OPEN
+
+Awaiting Azure platform recovery and manual retry.
+
+===========================================================================================
+END OF LOG
+===========================================================================================

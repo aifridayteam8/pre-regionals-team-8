@@ -1,0 +1,10 @@
+2024-01-15 12:00:00 [INFO] User authentication successful: user_id=12345, ip=192.168.1.100
+2024-01-15 12:00:15 [WARNING] Multiple failed login attempts: user_id=99999, ip=192.168.1.200, attempts=5
+2024-01-15 12:00:30 [ERROR] Failed login attempt: user_id=99999, ip=192.168.1.200, reason=invalid_credentials
+2024-01-15 12:00:45 [ERROR] Failed login attempt: user_id=99999, ip=192.168.1.200, reason=invalid_credentials
+2024-01-15 12:01:00 [CRITICAL] Brute force attack detected: ip=192.168.1.200, blocked=true
+2024-01-15 12:01:15 [INFO] IP blocked: 192.168.1.200, duration=1hour
+2024-01-15 12:01:30 [WARNING] Suspicious activity detected: user_id=12345, unusual_location=true
+2024-01-15 12:01:45 [ERROR] Unauthorized access attempt: endpoint=/admin/users, ip=192.168.1.150
+2024-01-15 12:02:00 [CRITICAL] SQL injection attempt detected: ip=192.168.1.150, query="SELECT * FROM users--"
+2024-01-15 12:02:15 [INFO] Security alert triggered: incident_id=SEC-2024-001, severity=high
