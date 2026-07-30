@@ -14,14 +14,27 @@ class OllamaClient(BaseAIClient):
         self.model = model
         self.client = ollama.Client(host=base_url)
     
-    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+    ) -> str:
         """Generate text using Ollama."""
+        options = {}
+        if max_tokens is not None:
+            options['num_predict'] = max_tokens
+        if temperature is not None:
+            options['temperature'] = temperature
+
         try:
             response = self.client.generate(
                 model=self.model,
                 prompt=prompt,
                 system=system_prompt,
-                stream=False
+                stream=False,
+                options=options or None
             )
             return response['response']
         except Exception as e:

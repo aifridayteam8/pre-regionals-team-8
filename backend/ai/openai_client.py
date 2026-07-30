@@ -14,18 +14,28 @@ class OpenAIClient(BaseAIClient):
         self.model = model
         self.client = OpenAI(api_key=api_key)
     
-    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+    ) -> str:
         """Generate text using OpenAI."""
         try:
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
-            
+
+            kwargs = {"temperature": temperature if temperature is not None else 0.7}
+            if max_tokens is not None:
+                kwargs["max_tokens"] = max_tokens
+
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                temperature=0.7
+                **kwargs
             )
             return response.choices[0].message.content
         except Exception as e:

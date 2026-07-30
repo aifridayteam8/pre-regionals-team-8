@@ -6,7 +6,13 @@ class BaseAIClient(ABC):
     """Base interface for AI clients."""
     
     @abstractmethod
-    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+    ) -> str:
         """Generate text from a prompt."""
         pass
     
