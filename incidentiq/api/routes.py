@@ -14,7 +14,7 @@ def health():
 
 @api.post("/incidents")
 def create_incident():
-    """Upload a log file: parse unstructured text into structured events and store."""
+    """Upload a log file: parse into a parent incident + child incidents, then store."""
     file = request.files.get("file")
     if file is None:
         return jsonify(error="no file uploaded (expected multipart form field 'file')"), 400
@@ -25,16 +25,18 @@ def create_incident():
     if len(data) > MAX_BYTES:
         return jsonify(error=f"file too large (> {MAX_BYTES} bytes)"), 413
 
-    result = parser.parse(data, filename=file.filename or "upload.log")
-    incident_id = store.save(result, filename=file.filename or "upload.log")
-    incident = store.get_incident(incident_id)
+    filename = file.filename or "upload.log"
+    parsed = parser.parse_file(data, filename=filename)
+    saved = store.save_file(parsed, filename=filename)
+    parent = store.get_incident(saved["parent_id"])
 
     return (
         jsonify(
-            incident_id=incident_id,
-            format=result.format,
-            event_count=len(result.events),
-            incident=incident,
+            parent_id=saved["parent_id"],
+            child_ids=saved["child_ids"],
+            format=parsed.format,
+            child_count=len(saved["child_ids"]),
+            incident=parent,
         ),
         201,
     )
@@ -42,12 +44,18 @@ def create_incident():
 
 @api.get("/incidents")
 def list_incidents():
-    return jsonify(incidents=store.list_incidents())
+    """List top-level incidents, each with nested child summaries."""
+    return jsonify(incidents=store.list_parents())
 
 
 @api.get("/incidents/<incident_id>")
 def get_incident(incident_id: str):
+    """Full detail. Parents include their children + own events; children include events."""
     incident = store.get_incident(incident_id)
     if incident is None:
         return jsonify(error=f"incident {incident_id} not found"), 404
-    return jsonify(incident=incident, events=store.get_events(incident_id))
+
+    payload = {"incident": incident, "events": store.get_events(incident_id)}
+    if incident.get("kind") == "parent":
+        payload["children"] = store.get_children(incident_id)
+    return jsonify(payload)

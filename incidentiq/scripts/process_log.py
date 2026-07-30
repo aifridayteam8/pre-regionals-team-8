@@ -1,7 +1,10 @@
 """Process an unstructured incident log into the SQLite store.
 
+Parses a file into a parent incident + child incidents and prints the tree.
+
 Usage (run from the incidentiq/ directory):
-    python scripts/process_log.py ../logs/Subscription Provisioning Failed
+    python scripts/process_log.py "../logs/multiple incidents 1"
+    python scripts/process_log.py --all        # process every file in ../logs
 """
 
 import sys
@@ -13,29 +16,37 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from services import parser, store  # noqa: E402
 
 
-def main(path: str) -> None:
-    raw = Path(path).read_bytes()
-    result = parser.parse(raw, filename=Path(path).name)
+def process(path: Path) -> None:
+    parsed = parser.parse_file(path.read_bytes(), filename=path.name)
+    saved = store.save_file(parsed, filename=path.name)
 
-    incident_id = store.save(result, filename=Path(path).name)
+    parent = store.get_incident(saved["parent_id"])
+    print(f"\n=== {path.name} (format={parsed.format}) ===")
+    print(
+        f"PARENT {parent['incident_id']}  sev={parent['severity']}  "
+        f"events={parent['event_count']}  errors={parent['error_count']}  "
+        f"duration={parent['duration_s']}s  children={len(saved['child_ids'])}"
+    )
+    if parent.get("root_cause"):
+        print(f"  root_cause: {parent['root_cause'][:100]}...")
+    for child in store.get_children(saved["parent_id"]):
+        print(
+            f"  |- CHILD {child['incident_id']}  sev={child['severity']}  "
+            f"events={child['event_count']}  errors={child['error_count']}  "
+            f"| {child['title']}"
+        )
 
-    print(f"Parsed {len(result.events)} events (format={result.format}) from {path}")
-    print(f"Banner metadata: {result.metadata}")
-    print(f"Saved as incident {incident_id}\n")
 
-    print("Structured events:")
-    for ev, det in zip(result.events, result.details):
-        ts = ev.ts.isoformat() if ev.ts else "—"
-        print(f"  {ev.id} {ts} {ev.severity:5} {ev.service}")
-        for k, v in det.items():
-            print(f"        {k}: {v}")
-
-    inc = store.get_incident(incident_id)
-    print("\nIncident summary row:")
-    for k, v in inc.items():
-        print(f"  {k}: {v}")
+def main(argv: list[str]) -> None:
+    logs_dir = Path(__file__).resolve().parent.parent.parent / "logs"
+    if argv and argv[0] == "--all":
+        for f in sorted(logs_dir.iterdir()):
+            if f.is_file():
+                process(f)
+    else:
+        target = Path(argv[0]) if argv else logs_dir / "multiple incidents 1"
+        process(target)
 
 
 if __name__ == "__main__":
-    target = sys.argv[1] if len(sys.argv) > 1 else "../logs/Subscription Provisioning Failed"
-    main(target)
+    main(sys.argv[1:])
