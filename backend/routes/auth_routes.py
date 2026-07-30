@@ -39,7 +39,7 @@ token_model = auth_ns.model('Token', {
 class UserRegister(Resource):
     @auth_ns.doc('register_user')
     @auth_ns.expect(user_register_model)
-    @auth_ns.marshal_with(token_model, code=201)
+    @auth_ns.response(201, 'Created', token_model)
     def post(self):
         """Register a new user."""
         try:
@@ -81,7 +81,7 @@ class UserRegister(Resource):
 class UserLogin(Resource):
     @auth_ns.doc('login_user')
     @auth_ns.expect(user_login_model)
-    @auth_ns.marshal_with(token_model)
+    @auth_ns.response(200, 'Success', token_model)
     def post(self):
         """Login user."""
         try:
@@ -112,7 +112,7 @@ class UserLogin(Resource):
 class TokenRefresh(Resource):
     @auth_ns.doc('refresh_token')
     @jwt_required(refresh=True)
-    @auth_ns.marshal_with(token_model)
+    @auth_ns.response(200, 'Success', token_model)
     def post(self):
         """Refresh access token."""
         current_user_id = get_jwt_identity()

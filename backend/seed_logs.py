@@ -40,7 +40,7 @@ def seed(include_samples: bool = False, reset: bool = False) -> None:
             if not directory.is_dir():
                 continue
             for path in sorted(directory.iterdir()):
-                if not path.is_file() or path.suffix in ('.md', '.csv', '.json'):
+                if not path.is_file() or path.suffix == '.md':
                     continue
                 parent = create_incident_from_log(user_id, path.read_bytes(), path.name)
                 print(

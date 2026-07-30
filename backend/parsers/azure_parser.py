@@ -90,6 +90,9 @@ class ParsedEvent:
     line_no: int
     ref: str = ""  # "E-0001"
     section: str | None = None
+    host: str | None = None
+    error_code: str | None = None
+    correlation_id: str | None = None
 
 
 @dataclass

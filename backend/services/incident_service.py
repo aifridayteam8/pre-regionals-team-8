@@ -4,6 +4,7 @@ from datetime import datetime
 from backend.models.incident import Incident, IncidentEvent, db
 from backend.models.user import User
 from backend.parsers.azure_parser import (
+    IncidentFile,
     ParsedEvent,
     parse_file,
     compute_severity,
@@ -11,6 +12,7 @@ from backend.parsers.azure_parser import (
     derive_category,
     event_error_code,
 )
+from backend.parsers.parser_factory import ParserFactory
 
 
 def _next_incident_code() -> str:
@@ -32,16 +34,63 @@ def _make_events(parsed_events: List[ParsedEvent], correlation_id: Optional[str]
             source=ev.section or 'azure',
             message=ev.message,
             raw_data=json.dumps(ev.details, default=str),
-            host=None,
+            host=ev.host,
             service=ev.service or None,
-            error_code=event_error_code(ev.details),
-            correlation_id=ev.details.get('CorrelationId') or correlation_id,
+            error_code=ev.error_code or event_error_code(ev.details),
+            correlation_id=ev.correlation_id or ev.details.get('CorrelationId') or correlation_id,
             event_ref=ev.ref,
             section=ev.section,
             line_no=ev.line_no,
         )
         for ev in parsed_events
     ]
+
+
+def _parse_with_factory(raw: bytes, filename: str) -> List[ParsedEvent]:
+    """Parse a non-Azure log (json/csv/txt/syslog) via the format parsers.
+
+    Returns ParsedEvents so severity/timing/persistence stay on one code path.
+    """
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'txt'
+    try:
+        parser = ParserFactory.get_parser(ext)
+    except ValueError:
+        parser = ParserFactory.get_parser('txt')
+
+    text = raw.decode('utf-8', errors='replace')
+    if hasattr(parser, 'parse_content'):
+        raw_events = parser.parse_content(text)
+    else:  # parsers that only read files
+        import tempfile, os
+        with tempfile.NamedTemporaryFile('w', suffix=f'.{ext}', delete=False,
+                                         encoding='utf-8') as tmp:
+            tmp.write(text)
+            tmp_path = tmp.name
+        try:
+            raw_events = parser.parse(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    events: List[ParsedEvent] = []
+    for n, item in enumerate(raw_events, start=1):
+        details = {
+            k: v for k, v in item.items()
+            if k not in ('timestamp', 'level', 'message', 'raw_data') and v
+        }
+        events.append(ParsedEvent(
+            ts=item.get('timestamp'),
+            level=item.get('level') or 'info',
+            service=item.get('service') or '',
+            message=item.get('message') or '',
+            details=details,
+            line_no=n,
+            ref=f'E-{n:04d}',
+            section=item.get('source'),
+            host=item.get('host'),
+            error_code=item.get('error_code'),
+            correlation_id=item.get('correlation_id'),
+        ))
+    return events
 
 
 def _timing(events: List[ParsedEvent]) -> dict:
@@ -65,6 +114,23 @@ def create_incident_from_log(user_id: int, raw: bytes, filename: str) -> Inciden
     its children are open too.
     """
     parsed = parse_file(raw, filename)
+
+    # The Azure parser only really matched if it recovered timestamps. For
+    # JSON/CSV/TXT/syslog logs it degrades to one untyped event per line, so
+    # hand those to the dedicated format parser instead (which extracts
+    # timestamp, level, host and service properly).
+    if not any(e.ts for e in parsed.parent_events) and not parsed.children:
+        factory_events = _parse_with_factory(raw, filename)
+        if any(e.ts for e in factory_events):
+            parsed = IncidentFile(
+                metadata={},
+                parent_severity=None,
+                parent_events=factory_events,
+                children=[],
+                analysis={},
+                format=filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'flat',
+            )
+
     meta = parsed.metadata
     correlation_id = meta.get('Correlation ID')
     all_events = list(parsed.parent_events) + [e for c in parsed.children for e in c.events]
