@@ -1,19 +1,21 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import Header from "../components/layout/Header";
 import UploadDropzone from "../components/upload/UploadDropzone";
 import UploadProgress from "../components/upload/UploadProgress";
-import ReportView from "../components/report/ReportView";
+import ErrorBanner from "../components/common/ErrorBanner";
 import Button from "../components/common/Button";
 
 import { uploadIncident, fetchFullReport } from "../api/client";
+import { runStagedFlow } from "../api/sse";
 
 const STAGES = ["Uploading", "Parsing & storing", "Building report"];
 
 export default function NewIncident() {
+  const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [stageIndex, setStageIndex] = useState(null);
-  const [report, setReport] = useState(null);
   const [error, setError] = useState(null);
 
   const isGenerating = stageIndex !== null;
@@ -21,32 +23,35 @@ export default function NewIncident() {
   function reset(selected = null) {
     setFile(selected);
     setStageIndex(null);
-    setReport(null);
     setError(null);
   }
 
   async function handleGenerate() {
     if (!file) return;
 
-    setReport(null);
     setError(null);
-    const startedAt = performance.now();
 
     try {
-      setStageIndex(0);
-      const uploaded = await uploadIncident(file);
+      const fullReport = await runStagedFlow(
+        [
+          {
+            label: "Uploading",
+            run: async () => (await uploadIncident(file)).parent_id,
+          },
+          // Parsing/storing already happened server-side inside the upload
+          // call above; this stage just gives the progression a visible beat.
+          { label: "Parsing & storing" },
+          {
+            label: "Building report",
+            run: (parentId) => fetchFullReport(parentId),
+          },
+        ],
+        setStageIndex
+      );
 
-      setStageIndex(1);
-      // Parsing/storing happen server-side inside the upload call; give the
-      // stage list a beat so the progression is visible.
-      await new Promise((resolve) => setTimeout(resolve, 250));
-
-      setStageIndex(2);
-      const fullReport = await fetchFullReport(uploaded.parent_id, {
-        latencyMs: Math.round(performance.now() - startedAt),
-      });
-
-      setReport(fullReport);
+      // Hand the freshly-built report to the report page via nav state so it
+      // renders instantly instead of re-fetching what we just fetched.
+      navigate(`/report/${fullReport.incidentId}`, { state: { report: fullReport } });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -80,8 +85,8 @@ export default function NewIncident() {
         <UploadProgress fileName={file?.name} stages={STAGES} activeIndex={stageIndex} />
       )}
 
-      {!isGenerating && (
-        <ReportView report={report} error={error} onRetry={handleGenerate} />
+      {!isGenerating && error && (
+        <ErrorBanner message={error} onRetry={handleGenerate} onDismiss={() => setError(null)} />
       )}
     </>
   );

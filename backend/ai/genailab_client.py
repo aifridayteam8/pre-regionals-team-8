@@ -60,6 +60,18 @@ def _client_for(model: str) -> ChatOpenAI:
     return _clients[model]
 
 
+def _bound_client(model: str, json_mode: bool, max_tokens: int = None, temperature: float = None) -> ChatOpenAI:
+    client = _client_for(model)
+    bind_kwargs = {}
+    if json_mode:
+        bind_kwargs['response_format'] = {'type': 'json_object'}
+    if max_tokens is not None:
+        bind_kwargs['max_tokens'] = max_tokens
+    if temperature is not None:
+        bind_kwargs['temperature'] = temperature
+    return client.bind(**bind_kwargs) if bind_kwargs else client
+
+
 def _strip_code_fence(text: str) -> str:
     text = text.strip()
     if text.startswith('```'):
@@ -74,11 +86,16 @@ def _clean(text: str) -> str:
     return _strip_code_fence(_THINK_BLOCK_RE.sub('', text))
 
 
-def generate(model: str, prompt: str, system: str = '', json_mode: bool = False) -> str:
+def generate(
+    model: str,
+    prompt: str,
+    system: str = '',
+    json_mode: bool = False,
+    max_tokens: int = None,
+    temperature: float = None,
+) -> str:
     """Single completion against the gateway; strips think-blocks and fences."""
-    client = _client_for(model)
-    if json_mode:
-        client = client.bind(response_format={'type': 'json_object'})
+    client = _bound_client(model, json_mode, max_tokens, temperature)
 
     messages = []
     if system:
@@ -98,17 +115,29 @@ def warm_all() -> None:
 
 
 class GenAILabClient(BaseAIClient):
-    """BaseAIClient-compatible wrapper over the gateway."""
+    """BaseAIClient-compatible wrapper over the gateway.
+
+    Defaults to the 'structured' model since the primary caller
+    (ReportGenerator) asks for a single JSON-structured completion.
+    """
 
     def __init__(self, model: str = None):
-        self.model = model or MODELS['summary']
+        self.model = model or MODELS['structured']
 
-    def generate(self, prompt: str, system_prompt: str = '', **kwargs) -> str:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str = None,
+        max_tokens: int = None,
+        temperature: float = None,
+    ) -> str:
         return generate(
-            kwargs.get('model', self.model),
+            self.model,
             prompt,
             system=system_prompt or '',
-            json_mode=kwargs.get('json_mode', False),
+            json_mode=True,
+            max_tokens=max_tokens,
+            temperature=temperature,
         )
 
     def chat(self, messages: list) -> str:

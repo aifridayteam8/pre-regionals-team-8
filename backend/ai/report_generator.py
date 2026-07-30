@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional
 import json
+import os
 import re
 import logging
 from datetime import datetime
@@ -39,16 +40,23 @@ class ReportGenerator:
 
     def __init__(self, config: Config):
         self.config = config
-        self.client = self._get_client()
+        self.client, self._model_label = self._get_client()
 
     def _get_client(self):
-        """Get appropriate AI client based on configuration."""
+        """Get the AI client to use, per ARCHITECTURE.md's provider priority.
+
+        1. TCS GenAI Lab gateway (primary) - used whenever a key is configured.
+        2. OpenAI - explicit opt-in via USE_OPENAI + OPENAI_API_KEY.
+        3. Local Ollama - offline/dev fallback, no external dependency.
+        """
+        if os.environ.get('TCS_GENAILAB_API_KEY'):
+            from .genailab_client import GenAILabClient, MODELS
+            return GenAILabClient(), f"GenAI Lab {MODELS['structured']}"
         if self.config.USE_OPENAI and self.config.OPENAI_API_KEY:
             from .openai_client import OpenAIClient
-            return OpenAIClient(self.config.OPENAI_API_KEY, self.config.OPENAI_MODEL)
-        else:
-            from .ollama_client import OllamaClient
-            return OllamaClient(self.config.OLLAMA_BASE_URL, self.config.OLLAMA_MODEL)
+            return OpenAIClient(self.config.OPENAI_API_KEY, self.config.OPENAI_MODEL), f"OpenAI {self.config.OPENAI_MODEL}"
+        from .ollama_client import OllamaClient
+        return OllamaClient(self.config.OLLAMA_BASE_URL, self.config.OLLAMA_MODEL), f"Ollama {self.config.OLLAMA_MODEL}"
 
     def generate_report(self, incident_data: Dict, events: List[Dict]) -> Dict:
         """Generate complete incident report with a single bounded LLM call."""
@@ -92,7 +100,7 @@ class ReportGenerator:
         context = (
             f"Incident: {incident_data.get('title', 'Unknown')} | "
             f"Severity: {incident_data.get('severity', 'Unknown')} | "
-            f"Type: {incident_data.get('incident_type', 'Unknown')}\n"
+            f"Type: {incident_data.get('category') or incident_data.get('incident_type', 'Unknown')}\n"
             f"{len(events)} events total "
             f"({len([e for e in events if e.get('level') in ['error', 'critical']])} error/critical, "
             f"{len([e for e in events if e.get('level') == 'warning'])} warning)\n"
@@ -196,10 +204,7 @@ Total response under 300 words."""
 
     def _get_model_name(self) -> str:
         """Get the name of the AI model being used."""
-        if self.config.USE_OPENAI:
-            return f"OpenAI {self.config.OPENAI_MODEL}"
-        else:
-            return f"Ollama {self.config.OLLAMA_MODEL}"
+        return self._model_label
 
     def _calculate_confidence_score(self, events: List[Dict], sections: Dict[str, str]) -> float:
         """Calculate confidence score from event volume and how many sections were filled."""

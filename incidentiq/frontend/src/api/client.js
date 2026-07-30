@@ -12,7 +12,7 @@ async function request(path, options = {}) {
     /* non-JSON response */
   }
   if (!res.ok) {
-    throw new Error(body?.error ?? `Request failed (${res.status})`);
+    throw new Error(body?.message ?? body?.error ?? `Request failed (${res.status})`);
   }
   return body;
 }
@@ -48,7 +48,7 @@ function minutes(durationS) {
   return durationS != null ? Math.max(1, Math.round(durationS / 60)) : null;
 }
 
-function shortDate(row) {
+export function shortDate(row) {
   const iso = row.started_at ?? row.created_at;
   return iso ? iso.slice(0, 10) : "-";
 }
@@ -142,7 +142,6 @@ export function toReport(incident, events, meta = {}) {
       rootCause ??
       `Parsed ${incident.event_count} events (${incident.error_count} errors, ${incident.warn_count} warnings) from ${incident.source_filename}.`,
     impact: {
-      usersAffected: findDetail(events, "Affected User") ?? findDetail(events, "User") ?? "Unknown",
       services,
       durationMinutes: minutes(incident.duration_s),
       description: typeof impactText === "string" ? impactText.replace(/\s*\|\s*/g, " ") : null,
@@ -158,13 +157,6 @@ export function toReport(incident, events, meta = {}) {
       text,
     })),
     timeline: events.map(toTimelineEvent),
-    transparency: {
-      promptDigest: "n/a — deterministic parser (AI pipeline not wired yet)",
-      model: "incidentiq rule-based parser",
-      validation: `format=${incident.format} · ${incident.event_count} events stored`,
-      latencyMs: meta.latencyMs ?? null,
-      retryCount: 0,
-    },
     children: meta.children ?? [],
   };
 }

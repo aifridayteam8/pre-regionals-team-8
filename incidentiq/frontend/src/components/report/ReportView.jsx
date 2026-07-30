@@ -6,14 +6,12 @@ import ImpactCard from "./ImpactCard";
 import RcaCard from "./RcaCard";
 import RecommendationCard from "./RecommendationCard";
 import TimelineTable from "./TimelineTable";
-import DebugPanel from "./DebugPanel";
+import ExportMenu from "./ExportMenu";
 import Loader from "../common/Loader";
 import EmptyState from "../common/EmptyState";
 import ErrorBanner from "../common/ErrorBanner";
-import Button from "../common/Button";
-import Icon from "../common/Icon";
 
-const TABS = ["Report", "Timeline", "AI Transparency"];
+const TABS = ["Report", "Timeline"];
 
 export default function ReportView({ report, isLoading = false, error, onRetry }) {
   const [activeTab, setActiveTab] = useState(TABS[0]);
@@ -26,22 +24,14 @@ export default function ReportView({ report, isLoading = false, error, onRetry }
     return (
       <EmptyState
         title="No report yet"
-        message="Upload an incident log or pick a sample file to generate an AI incident report."
+        message="Upload an incident log to generate an AI incident report."
       />
     );
   }
 
   return (
     <div className="report-view">
-      <ReportHeader
-        report={report}
-        actions={
-          <Button variant="secondary" size="sm">
-            <Icon name="download" size={14} />
-            Export
-          </Button>
-        }
-      />
+      <ReportHeader report={report} actions={<ExportMenu report={report} />} />
 
       <div className="tabs" role="tablist">
         {TABS.map((tab) => (
@@ -72,10 +62,6 @@ export default function ReportView({ report, isLoading = false, error, onRetry }
       )}
 
       {activeTab === "Timeline" && <TimelineTable events={report.timeline} />}
-
-      {activeTab === "AI Transparency" && (
-        <DebugPanel transparency={report.transparency} payload={report} />
-      )}
     </div>
   );
 }

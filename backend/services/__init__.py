@@ -1,5 +1,3 @@
-from backend.services.incident_service import IncidentService
-from backend.services.report_service import ReportService
-from backend.services.event_service import EventService
+from backend.services.incident_service import create_incident_from_log, resolve_incident
 
-__all__ = ['IncidentService', 'ReportService', 'EventService']
+__all__ = ['create_incident_from_log', 'resolve_incident']

@@ -281,55 +281,14 @@
   font-size: var(--text-sm);
 }
 
-.sample-files-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  list-style: none;
-}
-
-.sample-file {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  width: 100%;
-  padding: var(--space-3);
-  border: 1px solid var(--border);
+.dropzone-error {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--danger);
   border-radius: var(--radius-md);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.sample-file:hover:not(:disabled) {
-  border-color: var(--brand);
-  background: var(--surface-hover);
-}
-
-.sample-file:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.sample-file-name {
-  font-weight: 550;
-}
-
-.sample-file-meta {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--muted-2);
-  font-family: var(--font-mono);
-}
-
-.upload-actions {
-  display: flex;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
+  background: rgba(229, 72, 77, 0.1);
+  color: var(--danger);
+  font-size: var(--text-sm);
 }
 
 /* ============ progress ============ */
@@ -501,6 +460,41 @@
   align-items: flex-end;
   gap: var(--space-3);
   flex-shrink: 0;
+}
+
+.export-menu {
+  position: relative;
+}
+
+.export-menu-panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-md);
+}
+
+.export-menu-item {
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.export-menu-item:hover {
+  background: var(--surface-hover);
 }
 
 .severity-badge {
@@ -762,6 +756,75 @@
   border-bottom: none;
 }
 
+.is-clickable-row {
+  cursor: pointer;
+}
+
+mark {
+  background: rgba(59, 130, 246, 0.35);
+  color: var(--text-strong);
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.filter-search {
+  position: relative;
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.filter-search-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-2);
+  pointer-events: none;
+}
+
+.filter-search-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) * 2 + 15px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.filter-search-input:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.filter-field {
+  flex: 0 0 auto;
+}
+
+.filter-select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.filter-select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
 .table-scroll {
   max-height: 560px;
   overflow: auto;
@@ -980,6 +1043,11 @@
   color: var(--text);
 }
 
+.dashboard-filter-note {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+}
+
 @media (max-width: 900px) {
   .upload-grid {
     grid-template-columns: 1fr;
@@ -992,4 +1060,54 @@
   .report-header-side {
     align-items: flex-start;
   }
+}
+
+/* ============ print (report view only) ============ */
+@media print {
+  .sidebar,
+  .health,
+  .tabs,
+  .export-menu,
+  .page-header-side,
+  .filter-bar {
+    display: none !important;
+  }
+
+  .app-layout,
+  .app-main,
+  .page-container {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body,
+  .report-view,
+  .card {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+
+  .report-title,
+  .report-meta,
+  .card-title,
+  .summary-text,
+  .impact-item dd,
+  .rca-root-cause,
+  .rca-reasoning,
+  .recommendation-text,
+  .data-table td,
+  .data-table th {
+    color: #000 !important;
+  }
+
+  .card {
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+  }
+
+  /* Timeline tab content isn't shown alongside Report tab content in the DOM
+     (only the active tab renders), so printing simply captures whichever tab
+     is on screen when Print is triggered - same as browser print elsewhere. */
 }

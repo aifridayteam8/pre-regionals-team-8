@@ -66,9 +66,7 @@ backend/
 │
 ├── services/              # Business Logic Layer
 │   ├── __init__.py
-│   ├── event_service.py   # Event correlation logic
-│   ├── incident_service.py # Incident business logic
-│   └── report_service.py  # Report business logic
+│   └── incident_service.py # Log parsing -> Incident/IncidentEvent persistence
 │
 ├── utils/                 # Utilities & Helpers
 │   ├── __init__.py
@@ -180,6 +178,6 @@ sequenceDiagram
 - **Framework**: Flask + Flask-RESTX
 - **Database**: SQLAlchemy ORM
 - **Authentication**: JWT (Flask-JWT-Extended)
-- **AI**: Ollama (local) / OpenAI (cloud)
+- **AI**: TCS GenAI Lab gateway (primary, cloud) / OpenAI (opt-in) / Ollama (local fallback)
 - **Validation**: Marshmallow
 - **Testing**: Pytest

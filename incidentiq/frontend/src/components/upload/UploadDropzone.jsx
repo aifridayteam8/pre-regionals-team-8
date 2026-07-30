@@ -2,8 +2,7 @@ import { useRef, useState } from "react";
 
 import Button from "../common/Button";
 import Icon from "../common/Icon";
-
-const ACCEPTED_HINT = ".log, .txt, .json or plain text";
+import { ACCEPTED_HINT, validateFile } from "../../utils/validateFile";
 
 function formatSize(bytes) {
   if (bytes == null) return null;
@@ -15,9 +14,19 @@ function formatSize(bytes) {
 export default function UploadDropzone({ file, onFileSelected, onClear, disabled = false }) {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [validationError, setValidationError] = useState(null);
 
   function selectFile(selected) {
-    if (selected && onFileSelected) onFileSelected(selected);
+    if (!selected) return;
+
+    const error = validateFile(selected);
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+
+    setValidationError(null);
+    if (onFileSelected) onFileSelected(selected);
   }
 
   function handleDrop(event) {
@@ -25,6 +34,11 @@ export default function UploadDropzone({ file, onFileSelected, onClear, disabled
     setIsDragging(false);
     if (disabled) return;
     selectFile(event.dataTransfer.files?.[0]);
+  }
+
+  function handleClear() {
+    setValidationError(null);
+    onClear?.();
   }
 
   const size = formatSize(file?.size);
@@ -60,10 +74,21 @@ export default function UploadDropzone({ file, onFileSelected, onClear, disabled
           ref={inputRef}
           className="dropzone-input"
           type="file"
+          accept=".log,.txt,.json,text/plain,application/json"
           disabled={disabled}
-          onChange={(event) => selectFile(event.target.files?.[0])}
+          onChange={(event) => {
+            selectFile(event.target.files?.[0]);
+            // Reset so re-selecting the same (now-invalid) file still fires onChange.
+            event.target.value = "";
+          }}
         />
       </div>
+
+      {validationError && (
+        <p className="dropzone-error" role="alert">
+          {validationError}
+        </p>
+      )}
 
       <div className="upload-selection">
         {file ? (
@@ -74,7 +99,7 @@ export default function UploadDropzone({ file, onFileSelected, onClear, disabled
             </span>
 
             {onClear && (
-              <Button variant="ghost" size="sm" disabled={disabled} onClick={onClear}>
+              <Button variant="ghost" size="sm" disabled={disabled} onClick={handleClear}>
                 Clear
               </Button>
             )}

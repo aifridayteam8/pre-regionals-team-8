@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import NewIncident from "./pages/NewIncident";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
+import Report from "./pages/Report";
 import About from "./pages/About";
 
 function ProtectedLayout() {
@@ -36,6 +37,11 @@ function ProtectedLayout() {
                     <Route
                         path="/history"
                         element={<History />}
+                    />
+
+                    <Route
+                        path="/report/:incidentId"
+                        element={<Report />}
                     />
 
                     <Route

@@ -1,16 +1,11 @@
 import Card from "../common/Card";
 
 export default function ImpactCard({ impact = {} }) {
-  const { usersAffected, services = [], durationMinutes, description } = impact;
+  const { services = [], durationMinutes, description } = impact;
 
   return (
     <Card title="Impact" className="impact-card">
       <dl className="impact-grid">
-        <div className="impact-item">
-          <dt>Users affected</dt>
-          <dd>{usersAffected ?? "Unknown"}</dd>
-        </div>
-
         <div className="impact-item">
           <dt>Duration</dt>
           <dd>{durationMinutes != null ? `${durationMinutes} min` : "Unknown"}</dd>
