@@ -1,8 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 
-import Sidebar from "./components/Sidebar";
-
-import HealthDot from "./components/HealthDot";
+import Sidebar from "./components/layout/Sidebar";
+import Topbar from "./components/layout/Topbar";
 
 import NewIncident from "./pages/NewIncident";
 import History from "./pages/History";
@@ -14,18 +13,18 @@ export default function App() {
     <div className="app-layout">
       <Sidebar />
 
-      <main className="page-container">
+      <div className="app-main">
+        <Topbar health="healthy" />
 
-        <HealthDot />
-
-        <Routes>
-          <Route path="/" element={<NewIncident />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/about" element={<About />} />
-        </Routes>
-
-      </main>
+        <main className="page-container">
+          <Routes>
+            <Route path="/" element={<NewIncident />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/about" element={<About />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 }
