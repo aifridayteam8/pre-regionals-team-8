@@ -1,7 +1,7 @@
 """Process an unstructured incident log into the SQLite store.
 
 Usage (run from the incidentiq/ directory):
-    python scripts/process_log.py ../logs/log1
+    python scripts/process_log.py ../logs/Subscription Provisioning Failed
 """
 
 import sys
@@ -37,5 +37,5 @@ def main(path: str) -> None:
 
 
 if __name__ == "__main__":
-    target = sys.argv[1] if len(sys.argv) > 1 else "../logs/log1"
+    target = sys.argv[1] if len(sys.argv) > 1 else "../logs/Subscription Provisioning Failed"
     main(target)

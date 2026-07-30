@@ -1,0 +1,247 @@
+=========================================================================================
+AZURE INFRASTRUCTURE INCIDENT LOG
+Environment       : Production
+Service           : Azure Active Directory
+Incident Type     : AD Group Creation Failure
+Severity          : SEV-2
+Correlation ID    : a2f81bd4-2d91-4f86-9e5d-bcc23478fa17
+=========================================================================================
+
+2026-07-30T10:11:08.114Z INFO UserRequestService
+
+User: michael.smith@contoso.com
+Employee ID: EMP10245
+Department: Finance
+Request ID: REQ-AD-483920
+Workflow ID: WF-AD-20260730-483920
+
+Action:
+Create Azure AD Security Group
+
+Subscription:
+Finance-Production
+
+Requested Group:
+Finance-Production-Admins
+
+Tenant:
+contoso.onmicrosoft.com
+
+Status:
+Request Accepted
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:11:10.212Z INFO Workflow Engine
+
+Workflow Started
+
+Current Stage:
+Azure AD Group Provisioning
+
+CorrelationId:
+a2f81bd4-2d91-4f86-9e5d-bcc23478fa17
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:11:13.624Z INFO Microsoft Graph Client
+
+POST https://graph.microsoft.com/v1.0/groups
+
+Payload
+
+{
+"displayName":"Finance-Production-Admins",
+"mailEnabled":false,
+"mailNickname":"finance-prod-admins",
+"securityEnabled":true
+}
+
+HTTP Method:
+POST
+
+HTTP Status:
+202 Accepted
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:11:20.814Z INFO Azure Monitor
+
+Metric:
+Graph API Response Time
+
+Current Value:
+23.4 Seconds
+
+Threshold:
+15 Seconds
+
+Alert:
+Pending
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:11:33.416Z WARN Microsoft Graph API
+
+POST https://graph.microsoft.com/v1.0/groups
+
+HTTP Status:
+504 Gateway Timeout
+
+Response
+
+{
+"error":{
+"code":"GatewayTimeout",
+"message":"Upstream directory service unavailable."
+}
+}
+
+Retry Count:
+1
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:11:35.611Z INFO Retry Policy
+
+Retry Attempt:
+2
+
+Waiting:
+10 Seconds
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:11:46.018Z INFO Microsoft Graph Client
+
+POST https://graph.microsoft.com/v1.0/groups
+
+HTTP Method:
+POST
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:12:09.184Z ERROR Microsoft Graph API
+
+HTTP Status:
+504 Gateway Timeout
+
+Response
+
+{
+"error":{
+"code":"GatewayTimeout",
+"message":"Directory backend timed out."
+}
+}
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:12:15.811Z WARN Azure Monitor
+
+Alert Name:
+Microsoft Graph High Latency
+
+Severity:
+High
+
+Average Response Time:
+28.6 Seconds
+
+Affected Endpoint:
+graph.microsoft.com
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:12:20.194Z INFO Activity Log
+
+Operation:
+Microsoft.Graph/groups/write
+
+Category:
+Administrative
+
+Status:
+Failed
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:12:24.607Z ERROR Azure AD Provisioning Engine
+
+Unable to create security group
+
+Group:
+Finance-Production-Admins
+
+Failure Reason:
+Directory Service Timeout
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:12:30.442Z INFO Rollback Engine
+
+Rollback Started
+
+Deleting temporary directory objects...
+
+Rollback Status:
+Completed
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:12:34.985Z INFO Notification Service
+
+Sending failure notification
+
+Recipient:
+michael.smith@contoso.com
+
+Delivery:
+Success
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T10:12:40.714Z INCIDENT SUMMARY
+
+Incident ID:
+INC-AD-20260730-1208
+
+Severity:
+SEV-2
+
+Affected Service:
+Azure Active Directory
+
+Subscription:
+Finance-Production
+
+Workflow:
+WF-AD-20260730-483920
+
+Total Execution Time:
+92 Seconds
+
+Root Cause
+
+Microsoft Graph API repeatedly returned HTTP 504 Gateway Timeout during Azure AD Security Group creation.
+
+Impact
+
+• Security group not created
+• Subscription onboarding blocked
+• RBAC assignment skipped
+
+Recommendations
+
+• Retry provisioning after Graph service recovery
+• Increase retry attempts from 2 to 5
+• Configure exponential backoff
+• Alert when Graph API latency exceeds 15 seconds
+• Implement Graph API health checks
+
+Incident Status:
+Open
+
+=========================================================================================
+END OF LOG
+=========================================================================================

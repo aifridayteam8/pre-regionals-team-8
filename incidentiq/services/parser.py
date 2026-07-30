@@ -1,6 +1,6 @@
 """Turn an unstructured incident log into structured Event records.
 
-Built for block-structured logs like logs/log1: each event is a header line
+Built for block-structured logs like logs/Subscription Provisioning Failed: each event is a header line
 
     2026-07-30T09:19:12.108Z WARN Azure AD Graph API
 
