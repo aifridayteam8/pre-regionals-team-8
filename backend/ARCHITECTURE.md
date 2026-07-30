@@ -1,5 +1,18 @@
 # Backend Architecture Diagram
 
+> **Merged backend (2026-07-30).** `backend/` is now the single Flask
+> application. The former standalone `incidentiq/` server was retired: its
+> Azure log parser moved to `parsers/azure_parser.py` and its TCS gateway
+> client to `ai/genailab_client.py`. `incidentiq/` keeps only the React
+> frontend, which calls this API at `http://localhost:5000/api`.
+>
+> **Auth:** incident/report/analytics routes use `@jwt_optional` — they work
+> with or without a token; unauthenticated calls are attributed to a seeded
+> `demo` user. Swap back to `@jwt_required()` once the frontend has a login.
+>
+> **Hierarchy:** one log file becomes one *parent* `Incident` plus one *child*
+> per `INCIDENT N` section; children inherit the parent's status and category.
+
 ## Simplified Folder Structure
 
 ```
@@ -11,6 +24,7 @@ backend/
 ├── ai/                    # AI Integration Layer
 │   ├── __init__.py
 │   ├── base_client.py     # Abstract interface for AI clients
+│   ├── genailab_client.py # TCS GenAI Lab gateway client (primary)
 │   ├── ollama_client.py   # Ollama local LLM client
 │   ├── openai_client.py   # OpenAI API client
 │   └── report_generator.py # AI-powered report generation
@@ -34,11 +48,14 @@ backend/
 ├── parsers/               # Log File Parsers
 │   ├── __init__.py
 │   ├── base_parser.py     # Abstract parser interface
+│   ├── azure_parser.py    # Azure block/hierarchical parser (parent+children)
 │   ├── csv_parser.py      # CSV log parser
 │   ├── json_parser.py     # JSON log parser
 │   ├── txt_parser.py      # Plain text log parser
 │   ├── syslog_parser.py   # Syslog format parser
 │   └── parser_factory.py  # Parser factory pattern
+│
+├── seed_logs.py           # Seed the DB from logs/ and sample_logs/
 │
 ├── routes/                # API Endpoints (Flask-RESTX)
 │   ├── __init__.py

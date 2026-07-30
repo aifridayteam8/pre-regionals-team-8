@@ -1,35 +1,26 @@
-# Flask Core
-Flask==3.0.0
-Flask-RESTX==1.3.0
-Flask-JWT-Extended==4.6.0
-Flask-CORS==4.0.0
-Flask-Migrate==4.0.5
+# Unified requirements for the merged backend (backend/) + parser stack.
+# Loose >= pins matching the versions verified working in this environment.
+
+# Flask core
+Flask>=3.0
+Flask-RESTX>=1.3
+Flask-JWT-Extended>=4.6
+Flask-CORS>=4.0
+Flask-Migrate>=4.0
+Flask-SQLAlchemy>=3.1
 
 # Database
-SQLAlchemy==2.0.23
-Flask-SQLAlchemy==3.1.1
-psycopg2-binary==2.9.9
+SQLAlchemy>=2.0
 
-# Serialization/Validation
-marshmallow==3.20.1
-python-dotenv==1.0.0
+# Serialization / validation
+marshmallow>=3.20
+python-dotenv>=1.0
 
-# AI/LLM
-ollama==0.1.7
-langchain==0.1.0
-langchain-community==0.0.10
-langchain-core==0.1.0
-langchain-openai==0.0.2
-openai==1.7.2
-httpx==0.25.2
-
-# Utilities
-python-dateutil==2.8.2
-pytz==2023.3
+# AI / LLM (TCS GenAI Lab gateway, OpenAI-compatible; ollama kept for the local client)
+langchain-openai>=0.3
+openai>=1.7
+httpx>=0.27
+ollama>=0.1.7
 
 # Testing
-pytest==7.4.3
-pytest-cov==4.1.0
-
-# File Processing
-pandas==2.1.4
+pytest>=7.4

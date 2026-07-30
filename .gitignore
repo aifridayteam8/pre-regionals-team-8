@@ -1,4 +1,17 @@
-incidentiq/.cache/
 __pycache__/
 *.pyc
 .venv/
+.env
+
+# Flask instance folder (holds the SQLite database)
+instance/
+*.db
+
+# Runtime artifacts
+app.log
+backend/uploads/
+backend/reports/
+
+# Frontend
+node_modules/
+incidentiq/frontend/dist/

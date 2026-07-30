@@ -1,6 +1,6 @@
-from flask import request, current_app, send_file
+from flask import request, current_app, send_file, g
 from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from backend.auth.decorators import jwt_optional
 import os
 import json
 from datetime import datetime
@@ -70,7 +70,7 @@ report_generate_model = report_ns.model('ReportGenerate', {
 @report_ns.route('')
 class ReportList(Resource):
     @report_ns.doc('list_reports')
-    @jwt_required()
+    @jwt_optional
     def get(self):
         """List all reports."""
         page = request.args.get('page', 1, type=int)
@@ -101,7 +101,7 @@ class ReportList(Resource):
 @report_ns.route('/<int:report_id>')
 class ReportDetail(Resource):
     @report_ns.doc('get_report')
-    @jwt_required()
+    @jwt_optional
     @report_ns.marshal_with(report_model)
     def get(self, report_id):
         """Get report by ID."""
@@ -109,7 +109,7 @@ class ReportDetail(Resource):
         return report.to_dict()
     
     @report_ns.doc('update_report')
-    @jwt_required()
+    @jwt_optional
     @report_ns.expect(report_update_model)
     @report_ns.marshal_with(report_model)
     def put(self, report_id):
@@ -152,7 +152,7 @@ class ReportDetail(Resource):
         return report.to_dict()
     
     @report_ns.doc('delete_report')
-    @jwt_required()
+    @jwt_optional
     def delete(self, report_id):
         """Delete report."""
         report = Report.query.get_or_404(report_id)
@@ -164,7 +164,7 @@ class ReportDetail(Resource):
 @report_ns.route('/generate')
 class ReportGenerate(Resource):
     @report_ns.doc('generate_report')
-    @jwt_required()
+    @jwt_optional
     @report_ns.expect(report_generate_model)
     @report_ns.marshal_with(report_model, code=201)
     def post(self):
@@ -174,7 +174,7 @@ class ReportGenerate(Resource):
         except ValidationError as err:
             return {'message': 'Validation error', 'errors': err.messages}, 400
         
-        current_user_id = get_jwt_identity()
+        current_user_id = g.current_user_id
         
         # Get incident
         incident = Incident.query.get_or_404(data['incident_id'])
@@ -228,7 +228,7 @@ class ReportGenerate(Resource):
 @report_ns.route('/<int:report_id>/download')
 class ReportDownload(Resource):
     @report_ns.doc('download_report')
-    @jwt_required()
+    @jwt_optional
     def get(self, report_id):
         """Download report in specified format."""
         report = Report.query.get_or_404(report_id)

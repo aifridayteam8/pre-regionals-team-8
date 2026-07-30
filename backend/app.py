@@ -71,11 +71,25 @@ def create_app(config_name=None):
     api.add_namespace(report_ns, path='/reports')
     api.add_namespace(analytics_ns, path='/analytics')
     
-    # Health check endpoint
+    # Create tables and seed the demo user used by unauthenticated requests
+    # (the frontend has no login yet — see auth/decorators.jwt_optional).
+    with app.app_context():
+        from backend.models import user, incident, report  # noqa: F401  (register models)
+        from backend.auth.decorators import get_or_create_demo_user
+
+        db.create_all()
+        get_or_create_demo_user()
+
+    # Health check endpoints. /api/health is what the frontend polls; /health
+    # is kept for existing container/orchestration probes.
+    @app.route('/api/health')
+    def api_health_check():
+        return {'status': 'ok', 'service': 'incidentiq'}, 200
+
     @app.route('/health')
     def health_check():
         return {'status': 'healthy', 'service': 'incident-report-generator'}, 200
-    
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):

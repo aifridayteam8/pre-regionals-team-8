@@ -22,9 +22,9 @@ class IncidentSchema(Schema):
     id = fields.Int(dump_only=True)
     title = fields.Str(required=True, validate=validate.Length(max=200))
     description = fields.Str()
-    severity = fields.Str(validate=validate.OneOf(['low', 'medium', 'high', 'critical']))
-    status = fields.Str(validate=validate.OneOf(['open', 'investigating', 'resolved', 'closed']))
-    incident_type = fields.Str(validate=validate.Length(max=50))
+    severity = fields.Str(validate=validate.OneOf(['SEV1', 'SEV2', 'SEV3', 'SEV4']))
+    status = fields.Str(validate=validate.OneOf(['Open', 'Investigating', 'Mitigated', 'Resolved', 'Closed']))
+    incident_type = fields.Str(validate=validate.Length(max=100))
     source = fields.Str(validate=validate.Length(max=100))
     detected_at = fields.DateTime(dump_only=True)
     resolved_at = fields.DateTime(allow_none=True)
@@ -40,9 +40,9 @@ class IncidentCreateSchema(Schema):
     """Schema for creating incident."""
     title = fields.Str(required=True, validate=validate.Length(max=200))
     description = fields.Str()
-    severity = fields.Str(validate=validate.OneOf(['low', 'medium', 'high', 'critical']), missing='medium')
-    status = fields.Str(validate=validate.OneOf(['open', 'investigating', 'resolved', 'closed']), missing='open')
-    incident_type = fields.Str(validate=validate.Length(max=50))
+    severity = fields.Str(validate=validate.OneOf(['SEV1', 'SEV2', 'SEV3', 'SEV4']), load_default='SEV3')
+    status = fields.Str(validate=validate.OneOf(['Open', 'Investigating', 'Mitigated', 'Resolved', 'Closed']), load_default='Open')
+    incident_type = fields.Str(validate=validate.Length(max=100))
     source = fields.Str(validate=validate.Length(max=100))
 
 
@@ -50,9 +50,9 @@ class IncidentUpdateSchema(Schema):
     """Schema for updating incident."""
     title = fields.Str(validate=validate.Length(max=200))
     description = fields.Str()
-    severity = fields.Str(validate=validate.OneOf(['low', 'medium', 'high', 'critical']))
-    status = fields.Str(validate=validate.OneOf(['open', 'investigating', 'resolved', 'closed']))
-    incident_type = fields.Str(validate=validate.Length(max=50))
+    severity = fields.Str(validate=validate.OneOf(['SEV1', 'SEV2', 'SEV3', 'SEV4']))
+    status = fields.Str(validate=validate.OneOf(['Open', 'Investigating', 'Mitigated', 'Resolved', 'Closed']))
+    incident_type = fields.Str(validate=validate.Length(max=100))
     source = fields.Str(validate=validate.Length(max=100))
 
 

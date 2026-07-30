@@ -6,6 +6,9 @@ from backend.parsers.csv_parser import CSVParser
 from backend.parsers.txt_parser import TXTParser
 from backend.parsers.syslog_parser import SyslogParser
 from backend.parsers.parser_factory import ParserFactory
+from backend.parsers.azure_parser import (
+    AzureParser, parse_file, compute_severity, derive_status, derive_category,
+)
 
 
 class TestJSONParser:
@@ -121,3 +124,152 @@ class TestParserFactory:
         """Test invalid parser type."""
         with pytest.raises(ValueError):
             ParserFactory.get_parser('invalid')
+
+
+SINGLE_INCIDENT_LOG = """\
+=================================================================================
+AZURE INFRASTRUCTURE INCIDENT LOG
+Environment : Production
+Region      : East US
+Correlation ID : c6b72d2d-45d1-4b8f-a76f-9b4e33d74f0d
+=================================================================================
+
+2026-07-30T09:18:42.174Z INFO UserRequestService
+User: john.doe@contoso.com
+Action: Create Azure Subscription
+
+------------------------------------------------------------
+
+2026-07-30T09:19:54.173Z ERROR Azure AD Graph API
+
+HTTP Status:
+504 Gateway Timeout
+
+Response:
+{
+   "error":{
+      "code":"GatewayTimeout",
+      "message":"Directory service unavailable."
+   }
+}
+
+------------------------------------------------------------
+
+2026-07-30T09:20:38.114Z INFO Incident Recorder
+
+Category:
+Azure Subscription Provisioning
+
+Incident Status:
+Resolved
+
+=================================================================================
+END OF LOG
+=================================================================================
+"""
+
+MULTI_INCIDENT_LOG = """\
+=================================================================================
+AZURE INFRASTRUCTURE INCIDENT LOG
+Environment : Production
+Severity : SEV-1
+Correlation ID : dbe29174-9fd7-47cb-a843-8ab26fd81145
+=================================================================================
+WORKFLOW STARTED
+=================================================================================
+
+2026-07-30T14:18:11.203Z INFO Request Service
+Status : Accepted
+
+=================================================================================
+INCIDENT 1
+AZURE SUBSCRIPTION PROVISIONING FAILED
+=================================================================================
+
+2026-07-30T14:19:14.281Z ERROR Azure Subscription API
+HTTP Status: 504 Gateway Timeout
+
+=================================================================================
+INCIDENT 2
+RESOURCE GROUP CREATION FAILED
+=================================================================================
+
+2026-07-30T14:19:52.617Z ERROR ARM Validation
+Error: InvalidTemplate
+
+=================================================================================
+ROOT CAUSE ANALYSIS
+=================================================================================
+
+Subscription API timed out repeatedly.
+
+=================================================================================
+INCIDENT STATUS
+
+OPEN
+=================================================================================
+END OF LOG
+=================================================================================
+"""
+
+
+class TestAzureParser:
+    """Azure block-format parser (flat BaseParser interface)."""
+
+    def test_flat_parse_of_single_incident(self):
+        events = AzureParser().parse_content(SINGLE_INCIDENT_LOG)
+
+        assert len(events) == 3
+        assert events[0]['level'] == 'info'
+        assert events[1]['level'] == 'error'
+        # HTTP status is surfaced as the error code
+        assert events[1]['error_code'] == '504'
+        # banner correlation id is attached to every event
+        assert all(e['correlation_id'] == 'c6b72d2d-45d1-4b8f-a76f-9b4e33d74f0d' for e in events)
+
+    def test_flat_parse_includes_child_events(self):
+        events = AzureParser().parse_content(MULTI_INCIDENT_LOG)
+        # 1 framing event + 1 per child incident
+        assert len(events) == 3
+
+    def test_factory_returns_azure_parser_for_log(self):
+        assert isinstance(ParserFactory.get_parser('log'), AzureParser)
+
+
+class TestAzureHierarchicalParse:
+    """parse_file() — the parent/child structure used by the upload route."""
+
+    def test_single_incident_has_no_children(self):
+        parsed = parse_file(SINGLE_INCIDENT_LOG)
+
+        assert parsed.format == 'block'
+        assert parsed.children == []
+        assert len(parsed.parent_events) == 3
+        assert parsed.metadata['Environment'] == 'Production'
+        assert parsed.metadata['Region'] == 'East US'
+        assert compute_severity(parsed.parent_events) == 'SEV2'
+        assert derive_status(parsed) == 'Resolved'
+        assert derive_category(parsed) == 'Azure Subscription Provisioning'
+
+    def test_multi_incident_splits_into_children(self):
+        parsed = parse_file(MULTI_INCIDENT_LOG)
+
+        assert parsed.format == 'block-hier'
+        assert len(parsed.children) == 2
+        assert parsed.children[0].index == 1
+        assert 'AZURE SUBSCRIPTION PROVISIONING FAILED' in parsed.children[0].name
+        assert len(parsed.children[0].events) == 1
+        # banner severity wins over computed when stated
+        assert parsed.parent_severity == 'SEV1'
+        assert derive_status(parsed) == 'Open'
+        assert 'timed out repeatedly' in parsed.analysis['root_cause']
+
+    def test_json_payload_is_structured(self):
+        parsed = parse_file(SINGLE_INCIDENT_LOG)
+        error_event = next(e for e in parsed.parent_events if e.level == 'error')
+        payload = error_event.details['_payloads'][0]
+        assert payload['error']['code'] == 'GatewayTimeout'
+
+    def test_garbage_input_does_not_raise(self):
+        parsed = parse_file(b'\x00\x01 not a log at all \xff')
+        assert parsed.children == []

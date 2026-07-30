@@ -1,6 +1,6 @@
 from flask import request
 from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required
+from backend.auth.decorators import jwt_optional
 from sqlalchemy import func
 from datetime import datetime, timedelta
 from backend.models.incident import Incident, IncidentEvent, db
@@ -24,7 +24,7 @@ analytics_model = analytics_ns.model('Analytics', {
 @analytics_ns.route('/dashboard')
 class DashboardAnalytics(Resource):
     @analytics_ns.doc('get_dashboard_analytics')
-    @jwt_required()
+    @jwt_optional
     @analytics_ns.marshal_with(analytics_model)
     def get(self):
         """Get dashboard analytics."""
@@ -113,7 +113,7 @@ class DashboardAnalytics(Resource):
 @analytics_ns.route('/incidents/timeline')
 class IncidentTimeline(Resource):
     @analytics_ns.doc('get_incident_timeline')
-    @jwt_required()
+    @jwt_optional
     def get(self):
         """Get incident timeline data."""
         days = request.args.get('days', 30, type=int)
@@ -143,7 +143,7 @@ class IncidentTimeline(Resource):
 @analytics_ns.route('/reports/performance')
 class ReportPerformance(Resource):
     @analytics_ns.doc('get_report_performance')
-    @jwt_required()
+    @jwt_optional
     def get(self):
         """Get report generation performance metrics."""
         days = request.args.get('days', 30, type=int)
@@ -189,7 +189,7 @@ class ReportPerformance(Resource):
 @analytics_ns.route('/events/summary')
 class EventsSummary(Resource):
     @analytics_ns.doc('get_events_summary')
-    @jwt_required()
+    @jwt_optional
     def get(self):
         """Get events summary analytics."""
         days = request.args.get('days', 30, type=int)
