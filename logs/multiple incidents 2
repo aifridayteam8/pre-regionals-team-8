@@ -1,0 +1,469 @@
+===========================================================================================
+AZURE INFRASTRUCTURE INCIDENT LOG
+===========================================================================================
+
+Environment           : Production
+Cloud                 : Microsoft Azure
+Region                : Central India
+Tenant                : contoso.onmicrosoft.com
+Tenant ID             : 7fa91db2-5ab4-4d12-b55d-91f4ab3371ce
+
+Incident ID           : INC-20260730-700481
+Severity              : SEV-1
+
+Correlation ID        : 9b3e12a4-c6f4-4df8-9c63-fd13aa54bb72
+Request ID            : REQ-INFRA-991782
+Workflow ID           : WF-INFRA-991782
+
+User                  : emily.johnson@contoso.com
+Employee ID           : EMP11872
+Department            : Cloud Engineering
+
+Subscription          : Enterprise-App-Production
+Resource Group        : rg-enterprise-app-prod
+
+Virtual Network       : vnet-enterprise-prod
+Network Security Group: nsg-enterprise-prod
+Managed Identity      : mi-enterprise-app
+App Service           : app-enterprise-prod
+
+===========================================================================================
+WORKFLOW STARTED
+===========================================================================================
+
+2026-07-30T16:10:14.012Z INFO Request Service
+
+Infrastructure deployment request accepted.
+
+Requested Resources
+
+- Virtual Network
+- Network Security Group
+- User Assigned Managed Identity
+- Azure App Service
+
+Status
+
+Accepted
+
+===========================================================================================
+INCIDENT 1
+VIRTUAL NETWORK & NSG DEPLOYMENT FAILED
+(Address Space Conflict)
+===========================================================================================
+
+2026-07-30T16:10:18.881Z INFO ARM Deployment Engine
+
+Deployment Started
+
+Deployment Name
+
+Enterprise-Network-Deployment
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:10:22.437Z INFO Azure REST API
+
+PUT
+
+https://management.azure.com/subscriptions/xxxxxxxx/resourceGroups/rg-enterprise-app-prod/providers/Microsoft.Network/virtualNetworks/vnet-enterprise-prod?api-version=2023-05-01
+
+HTTP Method
+
+PUT
+
+HTTP Status
+
+201 Created
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:10:28.716Z INFO ARM Template Validation
+
+Validating network configuration...
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:10:34.182Z ERROR Azure Network Resource Provider
+
+HTTP Status
+
+409 Conflict
+
+Error Code
+
+AddressSpaceOverlap
+
+Message
+
+Virtual Network address space 10.10.0.0/16 overlaps with existing Virtual Network vnet-shared-services.
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:10:41.519Z WARN Deployment Retry Engine
+
+Retry Attempt
+
+1
+
+Updating address space...
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:10:52.733Z ERROR ARM Deployment
+
+Deployment Failed
+
+Tracking ID
+
+ARM-NET-883192
+
+Reason
+
+Address space conflict detected.
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:10:57.291Z INFO Azure Activity Log
+
+Operation
+
+Microsoft.Network/virtualNetworks/write
+
+Status
+
+Failed
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:11:02.904Z INFO Azure Monitor
+
+Alert Name
+
+Virtual Network Deployment Failed
+
+Severity
+
+High
+
+===========================================================================================
+INCIDENT 2
+MANAGED IDENTITY ASSIGNMENT FAILED
+(Azure AD Service Unavailable)
+===========================================================================================
+
+2026-07-30T16:11:08.211Z INFO Identity Provisioning Engine
+
+Creating User Assigned Managed Identity
+
+Identity
+
+mi-enterprise-app
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:11:11.083Z INFO Microsoft Graph Client
+
+POST
+
+https://graph.microsoft.com/v1.0/servicePrincipals
+
+HTTP Method
+
+POST
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:11:24.517Z ERROR Microsoft Graph API
+
+HTTP Status
+
+503 Service Unavailable
+
+Response
+
+{
+   "error":{
+      "code":"ServiceUnavailable",
+      "message":"Azure Active Directory service is temporarily unavailable."
+   }
+}
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:11:38.712Z WARN Retry Policy
+
+Retry Attempt
+
+1
+
+Waiting
+
+20 Seconds
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:11:59.411Z INFO Microsoft Graph API
+
+Retrying identity assignment...
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:12:18.204Z ERROR Microsoft Graph API
+
+HTTP Status
+
+503 Service Unavailable
+
+Error Code
+
+AADServiceUnavailable
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:12:25.111Z ERROR Identity Provisioning Engine
+
+Managed Identity Assignment Failed
+
+Reason
+
+Unable to contact Azure Active Directory.
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:12:31.771Z INFO Azure Activity Log
+
+Operation
+
+Microsoft.ManagedIdentity/userAssignedIdentities/write
+
+Status
+
+Failed
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:12:38.891Z INFO Azure Monitor
+
+Alert
+
+Managed Identity Provisioning Failure
+
+Severity
+
+Critical
+
+===========================================================================================
+INCIDENT 3
+APP SERVICE DEPLOYMENT FAILED
+(Deployment Package Validation Failure)
+===========================================================================================
+
+2026-07-30T16:12:46.417Z INFO Azure App Service Deployment Engine
+
+Starting deployment.
+
+Application
+
+EnterpriseWebAPI.zip
+
+Target
+
+app-enterprise-prod
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:12:51.823Z INFO Azure REST API
+
+POST
+
+https://management.azure.com/subscriptions/xxxxxxxx/resourceGroups/rg-enterprise-app-prod/providers/Microsoft.Web/sites/app-enterprise-prod/extensions/onedeploy
+
+HTTP Method
+
+POST
+
+HTTP Status
+
+202 Accepted
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:13:04.109Z INFO Deployment Validation
+
+Validating deployment package...
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:13:12.814Z ERROR App Service Deployment Engine
+
+HTTP Status
+
+400 Bad Request
+
+Error Code
+
+PackageValidationFailed
+
+Message
+
+Deployment package is invalid.
+
+Missing file
+
+web.config
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:13:20.194Z WARN Deployment Retry Engine
+
+Retry Attempt
+
+1
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:13:34.506Z ERROR App Service Deployment
+
+Deployment Aborted
+
+Reason
+
+Application package validation failed.
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:13:40.923Z INFO Azure Activity Log
+
+Operation
+
+Microsoft.Web/sites/deploy/action
+
+Status
+
+Failed
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:13:48.611Z INFO Azure Monitor
+
+Alert
+
+Application Deployment Failed
+
+Severity
+
+High
+
+===========================================================================================
+ROLLBACK
+===========================================================================================
+
+2026-07-30T16:13:55.182Z INFO Rollback Engine
+
+Rollback initiated.
+
+Cleaning deployment artifacts...
+
+Removing temporary App Service deployment...
+
+Removing pending Managed Identity assignment...
+
+Deleting failed ARM deployment records...
+
+-------------------------------------------------------------------------------------------
+
+2026-07-30T16:14:12.516Z INFO Rollback Completed
+
+Status
+
+Success
+
+===========================================================================================
+FINAL INCIDENT SUMMARY
+===========================================================================================
+
+Incident ID
+
+INC-20260730-700481
+
+Severity
+
+SEV-1
+
+Affected Subscription
+
+Enterprise-App-Production
+
+Affected Resource Group
+
+rg-enterprise-app-prod
+
+Execution Time
+
+238 Seconds
+
+===========================================================================================
+ROOT CAUSE ANALYSIS
+===========================================================================================
+
+Incident 1
+
+Virtual Network deployment failed because the requested address space
+10.10.0.0/16 overlapped with an existing Virtual Network (HTTP 409 AddressSpaceOverlap).
+
+Incident 2
+
+Managed Identity creation failed because Microsoft Graph API repeatedly
+returned HTTP 503 Service Unavailable, preventing Azure AD service principal creation.
+
+Incident 3
+
+Azure App Service deployment failed because the deployment package
+did not pass validation. Required application file "web.config"
+was missing, resulting in HTTP 400 PackageValidationFailed.
+
+===========================================================================================
+BUSINESS IMPACT
+===========================================================================================
+
+• Virtual Network was not provisioned.
+
+• Network Security Group deployment cancelled.
+
+• Managed Identity not created.
+
+• RBAC assignment skipped.
+
+• App Service deployment failed.
+
+• Production application release delayed.
+
+===========================================================================================
+RECOMMENDATIONS
+===========================================================================================
+
+• Validate VNet CIDR ranges before deployment.
+
+• Implement address space conflict detection in CI/CD.
+
+• Retry Managed Identity creation after Azure AD service recovery.
+
+• Monitor Microsoft Graph API health.
+
+• Validate deployment packages before publishing.
+
+• Add build pipeline validation for required files.
+
+• Perform dependency validation before application deployment.
+
+===========================================================================================
+INCIDENT STATUS
+
+OPEN
+
+Pending infrastructure remediation and redeployment.
+
+===========================================================================================
+END OF LOG
+===========================================================================================

@@ -1,0 +1,254 @@
+=========================================================================================
+AZURE INFRASTRUCTURE INCIDENT LOG
+Environment       : Production
+Service           : Azure Resource Manager
+Incident Type     : Resource Group Deployment Failure
+Severity          : SEV-2
+Correlation ID    : 5b7f9249-d12e-44e2-a90e-c87a98ab3191
+=========================================================================================
+
+2026-07-30T11:03:14.112Z INFO UserRequestService
+
+User:
+sarah.williams@contoso.com
+
+Employee ID:
+EMP10982
+
+Department:
+Engineering
+
+Request ID:
+REQ-RG-582011
+
+Workflow ID:
+WF-RG-20260730-582011
+
+Subscription:
+Engineering-Production
+
+Requested Resource Group:
+rg-engineering-prod
+
+Region:
+East US
+
+Status:
+Request Accepted
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:03:16.905Z INFO ARM Deployment Engine
+
+Deployment Started
+
+Deployment Name:
+Engineering-Infra-Deployment
+
+CorrelationId:
+5b7f9249-d12e-44e2-a90e-c87a98ab3191
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:03:20.612Z INFO Azure REST API
+
+PUT https://management.azure.com/subscriptions/3fcb11/resourcegroups/rg-engineering-prod?api-version=2022-09-01
+
+HTTP Method:
+PUT
+
+HTTP Status:
+201 Created
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:03:24.988Z INFO ARM Template Validation
+
+Template:
+mainTemplate.json
+
+Validation Started
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:03:31.521Z ERROR ARM Validation Engine
+
+Validation Failed
+
+Error Code:
+InvalidTemplate
+
+Message:
+
+The template validation failed because one or more resource dependencies are invalid.
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:03:34.218Z ERROR ARM Deployment
+
+Resource:
+Microsoft.Storage/storageAccounts
+
+Resource Name:
+stengineeringprod01
+
+Status:
+Validation Failed
+
+Reason:
+Required parameter "location" missing.
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:03:39.618Z WARN Deployment Retry Engine
+
+Retry Attempt:
+1
+
+Validation Restarted
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:03:48.413Z ERROR ARM Validation Engine
+
+HTTP Status:
+400 Bad Request
+
+Response
+
+{
+"error":{
+"code":"InvalidTemplate",
+"message":"Deployment template validation failed."
+}
+}
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:03:54.802Z INFO Azure Monitor
+
+Alert:
+ARM Deployment Validation Failure
+
+Severity:
+High
+
+Affected Resource Group:
+rg-engineering-prod
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:03:59.007Z INFO Activity Log
+
+Operation:
+Microsoft.Resources/deployments/write
+
+Status:
+Failed
+
+Category:
+Administrative
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:04:05.881Z ERROR ARM Deployment
+
+Deployment Name:
+Engineering-Infra-Deployment
+
+Provisioning State:
+Failed
+
+Tracking ID:
+ARM-DEP-583901
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:04:11.114Z WARN Rollback Engine
+
+Rollback Started
+
+Resources Scheduled For Removal
+
+Resource Group:
+rg-engineering-prod
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:04:18.602Z INFO Rollback Engine
+
+Deleting partially deployed resources
+
+Storage Account:
+stengineeringprod01
+
+Virtual Network:
+vnet-engineering-prod
+
+Network Security Group:
+nsg-engineering-prod
+
+Rollback Status:
+Success
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:04:26.718Z INFO Notification Service
+
+Email Sent To:
+sarah.williams@contoso.com
+
+Subject:
+Resource Group Deployment Failed
+
+-----------------------------------------------------------------------------------------
+
+2026-07-30T11:04:33.291Z INCIDENT SUMMARY
+
+Incident ID:
+INC-RG-20260730-1402
+
+Severity:
+SEV-2
+
+Affected Service:
+Azure Resource Manager
+
+Subscription:
+Engineering-Production
+
+Resource Group:
+rg-engineering-prod
+
+Deployment:
+Engineering-Infra-Deployment
+
+Execution Time:
+79 Seconds
+
+Root Cause
+
+ARM template validation failed due to missing required resource properties and invalid resource dependency configuration.
+
+Impact
+
+• Resource Group deployment failed
+• Storage Account not provisioned
+• Virtual Network deployment cancelled
+• Infrastructure rollout delayed
+
+Recommendations
+
+• Validate ARM templates before deployment
+• Enable CI/CD template validation
+• Use ARM What-If analysis
+• Add required parameters validation
+• Implement deployment pre-checks
+• Use template linting in Azure DevOps pipeline
+
+Incident Status:
+Resolved after rollback
+
+=========================================================================================
+END OF LOG
+=========================================================================================
